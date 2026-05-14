@@ -1,0 +1,141 @@
+/* Common linker script for nRF54L Arduino applications */
+
+OUTPUT_FORMAT ("elf32-littlearm", "elf32-bigarm", "elf32-littlearm")
+ENTRY(Reset_Handler)
+
+/* InternalFS (LittleFS) region: 28 KB carved out just above the app FLASH,
+ * below the bootloader. Single source of truth for InternalFileSystem.cpp
+ * and flash_nrf5x.c; per-chip values are determined by FLASH length in the
+ * including chip linker script:
+ *   nRF54L05: 0x47000-0x4DFFF
+ *   nRF54L10: 0xC7000-0xCDFFF
+ *   nRF54L15: 0x147000-0x14DFFF
+ *
+ * The 8 KB gap between __flash_arduino_end and __bootloader_addr is the
+ * same on all three chips (page alignment for the bootloader entry). */
+PROVIDE(__flash_arduino_start = ORIGIN(FLASH) + LENGTH(FLASH));
+PROVIDE(__flash_arduino_end   = __flash_arduino_start + 0x7000);
+PROVIDE(__bootloader_addr     = __flash_arduino_end + 0x2000);
+
+SECTIONS
+{
+    .text :
+    {
+        KEEP(*(.isr_vector))
+        *(.text*)
+        KEEP(*(.init))
+        KEEP(*(.fini))
+        *crtbegin.o(.ctors)
+        *crtbegin?.o(.ctors)
+        *(EXCLUDE_FILE(*crtend?.o *crtend.o) .ctors)
+        *(SORT(.ctors.*))
+        *(.ctors)
+        *crtbegin.o(.dtors)
+        *crtbegin?.o(.dtors)
+        *(EXCLUDE_FILE(*crtend?.o *crtend.o) .dtors)
+        *(SORT(.dtors.*))
+        *(.dtors)
+        *(.rodata*)
+        KEEP(*(.eh_frame*))
+    } > FLASH
+
+    .ARM.extab :
+    {
+        *(.ARM.extab* .gnu.linkonce.armextab.*)
+    } > FLASH
+
+    __exidx_start = .;
+    .ARM.exidx :
+    {
+        *(.ARM.exidx* .gnu.linkonce.armexidx.*)
+    } > FLASH
+    __exidx_end = .;
+
+    __etext = .;
+    _sidata = __etext;
+
+    /* SoftDevice SVC data */
+    .svc_data :
+    {
+        PROVIDE(__start_svc_data = .);
+        KEEP(*(svc_data))
+        PROVIDE(__stop_svc_data = .);
+    } > NOINIT
+
+    /* Filesystem data */
+    .fs_data :
+    {
+        PROVIDE(__start_fs_data = .);
+        KEEP(*(fs_data))
+        PROVIDE(__stop_fs_data = .);
+    } > RAM
+
+    .data : AT (__etext)
+    {
+        __data_start__ = .;
+        _sdata = .;
+        *(vtable)
+        *(.data*)
+        . = ALIGN(4);
+        PROVIDE_HIDDEN (__preinit_array_start = .);
+        KEEP(*(.preinit_array))
+        PROVIDE_HIDDEN (__preinit_array_end = .);
+        . = ALIGN(4);
+        PROVIDE_HIDDEN (__init_array_start = .);
+        KEEP(*(SORT(.init_array.*)))
+        KEEP(*(.init_array))
+        PROVIDE_HIDDEN (__init_array_end = .);
+        . = ALIGN(4);
+        PROVIDE_HIDDEN (__fini_array_start = .);
+        KEEP(*(SORT(.fini_array.*)))
+        KEEP(*(.fini_array))
+        PROVIDE_HIDDEN (__fini_array_end = .);
+        KEEP(*(.jcr*))
+        . = ALIGN(4);
+        __data_end__ = .;
+        _edata = .;
+    } > RAM
+
+    .bss :
+    {
+        . = ALIGN(4);
+        __bss_start__ = .;
+        _sbss = .;
+        *(.bss*)
+        *(COMMON)
+        . = ALIGN(4);
+        __bss_end__ = .;
+        _ebss = .;
+    } > RAM
+
+    .noinit (NOLOAD) :
+    {
+        PROVIDE(__start_noinit_data = .);
+        KEEP(*(.noinit))
+        PROVIDE(__stop_noinit_data = .);
+    } > RAM
+
+    .heap (COPY):
+    {
+        __HeapBase = .;
+        __end__ = .;
+        PROVIDE(end = .);
+        KEEP(*(.heap*))
+        __HeapLimit = .;
+    } > RAM
+
+    .stack_dummy (COPY):
+    {
+        KEEP(*(.stack*))
+    } > RAM
+
+    __StackTop = ORIGIN(RAM) + LENGTH(RAM);
+    __StackLimit = __StackTop - SIZEOF(.stack_dummy);
+    PROVIDE(__stack = __StackTop);
+
+    ASSERT(__StackLimit >= __HeapLimit, "region RAM overflowed with stack")
+    DataInitFlashUsed = __bss_start__ - __data_start__;
+    CodeFlashUsed = __etext - ORIGIN(FLASH);
+    TotalFlashUsed = CodeFlashUsed + DataInitFlashUsed;
+    ASSERT(TotalFlashUsed <= LENGTH(FLASH), "region FLASH overflowed with .data and user data")
+}

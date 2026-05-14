@@ -1,0 +1,11 @@
+blank_issues_enabled: false
+contact_links:
+  - name: GitHub Discussions
+    url: https://github.com/caveman99/nRF54_Arduino/discussions
+    about: For general questions, setup help, or design discussion.
+  - name: PlatformIO platform issues
+    url: https://github.com/caveman99/platform-nordicnrf54/issues
+    about: For build-system, upload, or board-definition problems (not framework code).
+  - name: Bootloader issues
+    url: https://github.com/caveman99/nRF54_Bootloader/issues
+    about: For DFU / bootloader hex problems.

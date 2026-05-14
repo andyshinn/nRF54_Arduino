@@ -1,0 +1,99 @@
+name: Bug Report
+description: Report a problem with the nRF54L Arduino framework
+labels: 'Bug'
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time to fill out this bug report.
+        It's fine to leave some fields blank if they don't apply.
+
+  - type: dropdown
+    attributes:
+      label: Operating System
+      options:
+        - Linux
+        - macOS
+        - Windows
+        - Other
+    validations:
+      required: true
+
+  - type: input
+    attributes:
+      label: PlatformIO Core version
+      placeholder: e.g. 6.1.18 (output of `pio --version`)
+    validations:
+      required: true
+
+  - type: dropdown
+    attributes:
+      label: Board
+      options:
+        - xiao_nrf54l15
+        - xiao_nrf54l15_sense
+        - nrf54l15dk
+        - nrf54l10dk
+        - nrf54l05dk
+        - Other (specify in description)
+    validations:
+      required: true
+
+  - type: input
+    attributes:
+      label: Framework version
+      description: Release tag, branch, or commit SHA (`git -C ~/.platformio/packages/framework-arduinoadafruitnrf54 rev-parse HEAD`)
+    validations:
+      required: true
+
+  - type: input
+    attributes:
+      label: Platform version
+      description: Tag/commit of caveman99/platform-nordicnrf54 being used
+    validations:
+      required: false
+
+  - type: textarea
+    attributes:
+      label: Sketch
+      placeholder: |
+        Path inside this repo (e.g. tests/blink, libraries/Bluefruit54Lib/examples/Peripheral/bleuart)
+        or a minimal reproducer as a code block / gist link.
+    validations:
+      required: true
+
+  - type: textarea
+    attributes:
+      label: What happened?
+      placeholder: A clear and concise description of the bug.
+    validations:
+      required: true
+
+  - type: textarea
+    attributes:
+      label: How to reproduce
+      placeholder: |
+        1. ...
+        2. ...
+        3. ...
+    validations:
+      required: true
+
+  - type: textarea
+    attributes:
+      label: Build / debug log
+      description: Paste the `pio run -v` output or relevant Serial1 output as a code block or attach as a file.
+      placeholder: |
+        ```
+        Building in release mode
+        ...
+        ```
+    validations:
+      required: false
+
+  - type: textarea
+    attributes:
+      label: Screenshots / scope captures
+      description: Optional — wiring photos, oscilloscope captures, etc.
+    validations:
+      required: false

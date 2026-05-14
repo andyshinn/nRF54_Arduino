@@ -1,0 +1,33 @@
+# Compiled Object files
+*.o
+*.obj
+
+# Visual Studio Code
+.vscode/
+.idea/
+.pio/
+.piopm
+/libraries/*/.development
+
+# Executables
+*.out
+*.app
+
+*.pyc
+/tools/.idea/
+/tools/midi_tests/node_modules
+
+.DS_Store
+*.swp
+/Output
+
+# Ignore local overrides of platform.txt and boards.txt,
+/boards.local.txt
+/platform.local.txt
+
+# Claude Code session state (user-local, never committed)
+.claude/
+
+# Local development notes (not part of the released package)
+/docs
+

@@ -1,0 +1,32 @@
+{
+  "name": "framework-arduinoadafruitnrf54",
+  "description": "Adafruit-style Arduino framework for Nordic nRF54L MCUs with s145 SoftDevice (PlatformIO only)",
+  "keywords": [
+    "nrf54l",
+    "nrf54l15",
+    "nrf54l10",
+    "nrf54l05",
+    "nordic-semiconductor",
+    "arduino",
+    "arduino-core",
+    "framework",
+    "platformio",
+    "ble",
+    "bluetooth-low-energy",
+    "bluefruit",
+    "softdevice",
+    "s145",
+    "cortex-m33",
+    "freertos",
+    "bsp",
+    "embedded"
+  ],
+  "system": "*",
+  "url": "https://github.com/caveman99/nRF54_Arduino",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/caveman99/nRF54_Arduino.git"
+  },
+  "license": "LGPL-2.1-or-later",
+  "version": "0.1.0"
+}
