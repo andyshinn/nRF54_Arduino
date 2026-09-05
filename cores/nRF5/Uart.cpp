@@ -259,11 +259,35 @@ int Uart::availableForWrite(void) {
 }
 
 //------------- Serial1 (UART, nRF54L has no USB CDC) -------------//
-Uart Serial1( NRF_UARTE00, SERIAL00_IRQn, PIN_SERIAL1_RX, PIN_SERIAL1_TX );
+//
+// A SERIALx instance can only reach GPIOs in its own power domain: SERIAL00
+// routes to P2, SERIAL2x to P1, SERIAL30 to P0. Boards whose P2 pins are all
+// committed elsewhere (e.g. XIAO nRF54LM20A, where the external SPI flash
+// takes P2 and the header is entirely P0/P1/P3) cannot reach UARTE00 at all
+// and must name a reachable instance in their variant.h, e.g.:
+//
+//     #define SERIAL1_UARTE        NRF_UARTE21
+//     #define SERIAL1_IRQN         SERIAL21_IRQn
+//     #define SERIAL1_IRQ_HANDLER  SERIAL21_IRQHandler
+//
+// The startup file's vector table must name the same handler.
+#ifndef SERIAL1_UARTE
+  #define SERIAL1_UARTE         NRF_UARTE00
+  #define SERIAL1_IRQN          SERIAL00_IRQn
+  #define SERIAL1_IRQ_HANDLER   SERIAL00_IRQHandler
+#endif
+
+#ifndef SERIAL2_UARTE
+  #define SERIAL2_UARTE         NRF_UARTE20
+  #define SERIAL2_IRQN          SERIAL20_IRQn
+  #define SERIAL2_IRQ_HANDLER   SERIAL20_IRQHandler
+#endif
+
+Uart Serial1( SERIAL1_UARTE, SERIAL1_IRQN, PIN_SERIAL1_RX, PIN_SERIAL1_TX );
 
 extern "C"
 {
-  void SERIAL00_IRQHandler()
+  void SERIAL1_IRQ_HANDLER()
   {
     Serial1.IrqHandler();
   }
@@ -271,11 +295,11 @@ extern "C"
 
 //------------- Serial2 -------------//
 #if defined(PIN_SERIAL2_RX) && defined(PIN_SERIAL2_TX)
-Uart Serial2( NRF_UARTE20, SERIAL20_IRQn, PIN_SERIAL2_RX, PIN_SERIAL2_TX );
+Uart Serial2( SERIAL2_UARTE, SERIAL2_IRQN, PIN_SERIAL2_RX, PIN_SERIAL2_TX );
 
 extern "C"
 {
-  void SERIAL20_IRQHandler()
+  void SERIAL2_IRQ_HANDLER()
   {
     Serial2.IrqHandler();
   }
