@@ -3,6 +3,11 @@
  * The SoftDevice-owned vectors (SVC, SWI00, AAR00_CCM00, ECB00, TIMER10, RADIO_0, GRTC_3, CLOCK_POWER)
  * are overridden by nordic/sd_isr.S. */
 
+/* The platform builds all of cores/nRF5 as one library, so every startup
+ * file here is assembled for every target. Only one may contribute a
+ * vector table. */
+#if defined(NRF54L05_XXAA) || defined(NRF54L10_XXAA) || defined(NRF54L15_XXAA)
+
     .syntax unified
     .arch armv8-m.main
     .thumb
@@ -447,3 +452,5 @@ SystemInit:
     .size SystemInit, .-SystemInit
 
     .end
+
+#endif
