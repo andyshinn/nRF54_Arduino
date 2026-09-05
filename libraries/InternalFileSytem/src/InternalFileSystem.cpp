@@ -32,7 +32,7 @@
 #else
   // nRF54L: address is chip-dependent and supplied by the linker script
   // (see nrf54_common.ld). Per-chip values: l05 0x47000, l10 0xC7000,
-  // l15 0x147000.
+  // l15 0x147000, lm20a 0x1C7000.
   extern "C" uint32_t __flash_arduino_start[];
   #define LFS_FLASH_ADDR        ((uint32_t) __flash_arduino_start)
 #endif
