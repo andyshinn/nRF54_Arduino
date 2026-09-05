@@ -171,11 +171,10 @@ static void bledfu_control_wr_authorize_cb(uint16_t conn_hdl, BLECharacteristic*
 
       // S145 does not provide sd_softdevice_vector_table_base_set.
       // After sd_softdevice_disable(), the vector table can be set directly via SCB.
-      // On nRF54L, the bootloader address is stored in UICR OTP or a known fixed address.
-      extern uint32_t const __bootloader_addr__; // defined in linker or variant
-      uint32_t bl_addr = (uint32_t)&__bootloader_addr__;
-      // If linker symbol not available, use the MBR's bootloader address pointer
-      if (bl_addr == 0) bl_addr = *((uint32_t*)0x00000FF8);
+      // Same symbol flash_nrf5x.c uses; nrf54_common.ld PROVIDEs it for every
+      // chip, so it always resolves and is never zero.
+      extern uint32_t __bootloader_addr[];
+      uint32_t bl_addr = (uint32_t)__bootloader_addr;
 
       SCB->VTOR = bl_addr;
 
