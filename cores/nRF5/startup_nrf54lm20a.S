@@ -1,5 +1,5 @@
 /*
- * Startup File for nRF54L15 (Cortex-M33)
+ * Startup File for nRF54LM20A (Cortex-M33)
  *
  * This file contains:
  * - Interrupt vector table
@@ -12,7 +12,7 @@
 /* The platform builds all of cores/nRF5 as one library, so every startup
  * file here is assembled for every target. Only one may contribute a
  * vector table. */
-#if defined(NRF54L05_XXAA) || defined(NRF54L10_XXAA) || defined(NRF54L15_XXAA)
+#if defined(NRF54LM20A_XXAA)
 
     .syntax unified
     .cpu cortex-m33
@@ -51,40 +51,40 @@ g_pfnVectors:
     .word   PendSV_Handler          /* 14: PendSV Handler */
     .word   SysTick_Handler         /* 15: SysTick Handler */
 
-    /* External Interrupts (nRF54L15 specific). */
-    /* IRQ 0..69 */
-    .rept 70
-    .word   Default_Handler
-    .endr
-    /* IRQ 70..71: AAR00/CCM00 and ECB00. */
-    .word   AAR00_CCM00_IRQHandler
-    .word   ECB00_IRQHandler
-    /* IRQ 72..73 */
-    .rept 2
-    .word   Default_Handler
-    .endr
-    /* IRQ 74: SERIAL00 (UARTE00/SPIM00/TWIM00) */
-    .word   SERIAL00_IRQHandler
-    /* IRQ 75..148 */
+    /* External Interrupts (nRF54LM20A specific).
+     * IRQ numbers differ from nRF54L15: the AAR00_CCM00/ECB00/SERIAL00
+     * block sits 3-4 lines higher, there is no I2S20, and the table runs
+     * to 289 (VREGUSB) rather than 239. */
+    /* IRQ 0..73 */
     .rept 74
     .word   Default_Handler
     .endr
-    /* IRQ 149..150: TWIM/TWIS instances used by Wire target IRQ mode. */
-    .word   TWIM20_IRQHandler
-    .word   TWIM21_IRQHandler
-    /* IRQ 151..217 */
-    .rept 67
+    /* IRQ 74..75: AAR00/CCM00 and ECB00. */
+    .word   AAR00_CCM00_IRQHandler
+    .word   ECB00_IRQHandler
+    /* IRQ 76: VPR00 */
+    .word   Default_Handler
+    /* IRQ 77: SERIAL00 (UARTE00/SPIM00/TWIM00) - Serial1 */
+    .word   SERIAL00_IRQHandler
+    /* IRQ 78..197 */
+    .rept 120
+    .word   Default_Handler
+    .endr
+    /* IRQ 198: SERIAL20 - Serial2, and the legacy SPI0/TWI0 compat alias. */
+    .word   SERIAL20_IRQHandler
+    /* IRQ 199: SERIAL21 - Serial1 on boards with no free P2 pins. */
+    .word   SERIAL21_IRQHandler
+    /* IRQ 200: SERIAL22 - Wire target mode on XIAO (WIRE_IRQ_HANDLER). */
+    .word   SERIAL22_IRQHandler
+    /* IRQ 201..217 */
+    .rept 17
     .word   Default_Handler
     .endr
     /* IRQ 218..219: GPIOTE20 IRQ lines used by attachInterrupt(). */
     .word   GPIOTE20_0_IRQHandler
     .word   GPIOTE20_1_IRQHandler
-    /* IRQ 220 */
-    .word   Default_Handler
-    /* IRQ 221: I2S20 */
-    .word   I2S20_IRQHandler
-    /* IRQ 222..223 */
-    .rept 2
+    /* IRQ 220..223 */
+    .rept 4
     .word   Default_Handler
     .endr
     /* IRQ 224..225: QDEC20, QDEC21 */
@@ -94,8 +94,8 @@ g_pfnVectors:
     .word   GRTC_0_IRQHandler
     .word   GRTC_1_IRQHandler
     .word   GRTC_2_IRQHandler
-    /* IRQ 229..239 */
-    .rept 11
+    /* IRQ 229..289 */
+    .rept 61
     .word   Default_Handler
     .endr
 
@@ -275,11 +275,26 @@ QDEC21_IRQHandler:
     bx lr
     .size QDEC21_IRQHandler, .-QDEC21_IRQHandler
 
-    .weak I2S20_IRQHandler
-    .type I2S20_IRQHandler, %function
-I2S20_IRQHandler:
+    /* Serial2 is only instantiated when a variant defines PIN_SERIAL2_*;
+     * Wire only claims SERIAL22 in target mode. Both slots still have to
+     * resolve when the variant leaves them unused. */
+    .weak SERIAL20_IRQHandler
+    .type SERIAL20_IRQHandler, %function
+SERIAL20_IRQHandler:
     b .
-    .size I2S20_IRQHandler, .-I2S20_IRQHandler
+    .size SERIAL20_IRQHandler, .-SERIAL20_IRQHandler
+
+    .weak SERIAL21_IRQHandler
+    .type SERIAL21_IRQHandler, %function
+SERIAL21_IRQHandler:
+    b .
+    .size SERIAL21_IRQHandler, .-SERIAL21_IRQHandler
+
+    .weak SERIAL22_IRQHandler
+    .type SERIAL22_IRQHandler, %function
+SERIAL22_IRQHandler:
+    b .
+    .size SERIAL22_IRQHandler, .-SERIAL22_IRQHandler
 
     .weak GRTC_1_IRQHandler
     .type GRTC_1_IRQHandler, %function
