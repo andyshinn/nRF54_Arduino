@@ -1,5 +1,4 @@
 /*
-
 Copyright (c) 2010 - 2026, Nordic Semiconductor ASA All rights reserved.
 
 SPDX-License-Identifier: BSD-3-Clause
@@ -29,26 +28,50 @@ INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
 CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
 ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 POSSIBILITY OF SUCH DAMAGE.
+ */
 
-*/
+#ifndef NRF_DEVICE_MEM_H_
+#define NRF_DEVICE_MEM_H_
 
-#ifndef NRF54L15_PERIPHERALS_H
-#define NRF54L15_PERIPHERALS_H
-
-#ifdef __cplusplus
-    extern "C" {
+#ifndef __DEFAULT_STACK_SIZE
+    #define __DEFAULT_STACK_SIZE 16384
+#endif
+#ifndef __DEFAULT_HEAP_SIZE
+    #define __DEFAULT_HEAP_SIZE 16384
 #endif
 
-#if defined(NRF_APPLICATION)
-  #include "nrf54l15_application_peripherals.h"
-#elif defined(NRF_FLPR)
-  #include "nrf54l15_flpr_peripherals.h"
-#else
-  #error "No processor selected"
-#endif
+/* Device memory Flash: */
+#define NRF_MEMORY_FLASH_BASE 0x00000000
+#define NRF_MEMORY_FLASH_SIZE 0x001FD000
 
-#ifdef __cplusplus
-}
-#endif
-#endif /* NRF54L15_PERIPHERALS_H */
+/* Device memory UICR: */
+#define NRF_MEMORY_UICR_BASE 0x00FFD000
+#define NRF_MEMORY_UICR_SIZE 0x00001000
 
+/* Device memory RAM: */
+#define NRF_MEMORY_RAM_BASE 0x20000000
+#define NRF_MEMORY_RAM_SIZE 0x00040000
+
+/* Device memory RAM2: */
+#define NRF_MEMORY_RAM2_BASE 0x20040000
+#define NRF_MEMORY_RAM2_SIZE 0x00040000
+
+/* Device memory PeripheralsAPBS: */
+#define NRF_MEMORY_PERIPHERALSAPBS_BASE 0x52000000
+#define NRF_MEMORY_PERIPHERALSAPBS_SIZE 0x00200000
+
+/* Device memory PeripheralsAPBNS: */
+#define NRF_MEMORY_PERIPHERALSAPBNS_BASE 0x42000000
+#define NRF_MEMORY_PERIPHERALSAPBNS_SIZE 0x00200000
+
+/* Device memory PeripheralsAHB: */
+#define NRF_MEMORY_PERIPHERALSAHB_BASE 0x52840000
+#define NRF_MEMORY_PERIPHERALSAHB_SIZE 0x00003000
+
+/* Device memory SystemSFR: */
+#define NRF_MEMORY_SYSTEMSFR_BASE 0xE0000000
+#define NRF_MEMORY_SYSTEMSFR_SIZE 0x00100000
+
+
+
+#endif

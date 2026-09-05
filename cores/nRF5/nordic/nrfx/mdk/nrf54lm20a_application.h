@@ -32,8 +32,8 @@ POSSIBILITY OF SUCH DAMAGE.
 
 */
 
-#ifndef NRF54L15_APPLICATION_H
-#define NRF54L15_APPLICATION_H
+#ifndef NRF54LM20A_APPLICATION_H
+#define NRF54LM20A_APPLICATION_H
 
 #ifdef __cplusplus
     extern "C" {
@@ -69,15 +69,17 @@ typedef enum {
   SWI03_IRQn                             = 31,       /*!< 31 SWI03                                                             */
   SPU00_IRQn                             = 64,       /*!< 64 SPU00                                                             */
   MPC00_IRQn                             = 65,       /*!< 65 MPC00                                                             */
-  AAR00_CCM00_IRQn                       = 70,       /*!< 70 AAR00_CCM00                                                       */
-  ECB00_IRQn                             = 71,       /*!< 71 ECB00                                                             */
-  CRACEN_IRQn                            = 72,       /*!< 72 CRACEN                                                            */
-  SERIAL00_IRQn                          = 74,       /*!< 74 SERIAL00                                                          */
-  RRAMC_IRQn                             = 75,       /*!< 75 RRAMC                                                             */
+  AAR00_CCM00_IRQn                       = 74,       /*!< 74 AAR00_CCM00                                                       */
+  ECB00_IRQn                             = 75,       /*!< 75 ECB00                                                             */
   VPR00_IRQn                             = 76,       /*!< 76 VPR00                                                             */
+  SERIAL00_IRQn                          = 77,       /*!< 77 SERIAL00                                                          */
+  RRAMC_IRQn                             = 78,       /*!< 78 RRAMC                                                             */
   CTRLAP_IRQn                            = 82,       /*!< 82 CTRLAP                                                            */
   CM33SS_IRQn                            = 84,       /*!< 84 CM33SS                                                            */
   TIMER00_IRQn                           = 85,       /*!< 85 TIMER00                                                           */
+  EGU00_IRQn                             = 88,       /*!< 88 EGU00                                                             */
+  CRACEN_IRQn                            = 89,       /*!< 89 CRACEN                                                            */
+  USBHS_IRQn                             = 90,       /*!< 90 USBHS                                                             */
   SPU10_IRQn                             = 128,      /*!< 128 SPU10                                                            */
   TIMER10_IRQn                           = 133,      /*!< 133 TIMER10                                                          */
   EGU10_IRQn                             = 135,      /*!< 135 EGU10                                                            */
@@ -103,22 +105,25 @@ typedef enum {
   TEMP_IRQn                              = 215,      /*!< 215 TEMP                                                             */
   GPIOTE20_0_IRQn                        = 218,      /*!< 218 GPIOTE20_0                                                       */
   GPIOTE20_1_IRQn                        = 219,      /*!< 219 GPIOTE20_1                                                       */
-  TAMPC_IRQn                             = 220,      /*!< 220 TAMPC                                                            */
-  I2S20_IRQn                             = 221,      /*!< 221 I2S20                                                            */
   QDEC20_IRQn                            = 224,      /*!< 224 QDEC20                                                           */
   QDEC21_IRQn                            = 225,      /*!< 225 QDEC21                                                           */
   GRTC_0_IRQn                            = 226,      /*!< 226 GRTC_0                                                           */
   GRTC_1_IRQn                            = 227,      /*!< 227 GRTC_1                                                           */
   GRTC_2_IRQn                            = 228,      /*!< 228 GRTC_2                                                           */
   GRTC_3_IRQn                            = 229,      /*!< 229 GRTC_3                                                           */
+  TDM_IRQn                               = 232,      /*!< 232 TDM                                                              */
+  SERIAL23_IRQn                          = 237,      /*!< 237 SERIAL23                                                         */
+  SERIAL24_IRQn                          = 238,      /*!< 238 SERIAL24                                                         */
+  TAMPC_IRQn                             = 239,      /*!< 239 TAMPC                                                            */
   SPU30_IRQn                             = 256,      /*!< 256 SPU30                                                            */
   SERIAL30_IRQn                          = 260,      /*!< 260 SERIAL30                                                         */
-  CLOCK_POWER_IRQn                       = 261,      /*!< 261 CLOCK_POWER                                                      */
   COMP_LPCOMP_IRQn                       = 262,      /*!< 262 COMP_LPCOMP                                                      */
   WDT30_IRQn                             = 264,      /*!< 264 WDT30                                                            */
   WDT31_IRQn                             = 265,      /*!< 265 WDT31                                                            */
   GPIOTE30_0_IRQn                        = 268,      /*!< 268 GPIOTE30_0                                                       */
   GPIOTE30_1_IRQn                        = 269,      /*!< 269 GPIOTE30_1                                                       */
+  CLOCK_POWER_IRQn                       = 270,      /*!< 270 CLOCK_POWER                                                      */
+  VREGUSB_IRQn                           = 289,      /*!< 289 VREGUSB                                                          */
 } IRQn_Type;
 
 /* ==================================================== Interrupt Aliases ==================================================== */
@@ -164,6 +169,26 @@ typedef enum {
 #define TWIS22_IRQHandler             SERIAL22_IRQHandler
 #define UARTE22_IRQn                  SERIAL22_IRQn
 #define UARTE22_IRQHandler            SERIAL22_IRQHandler
+#define SPIM23_IRQn                   SERIAL23_IRQn
+#define SPIM23_IRQHandler             SERIAL23_IRQHandler
+#define SPIS23_IRQn                   SERIAL23_IRQn
+#define SPIS23_IRQHandler             SERIAL23_IRQHandler
+#define TWIM23_IRQn                   SERIAL23_IRQn
+#define TWIM23_IRQHandler             SERIAL23_IRQHandler
+#define TWIS23_IRQn                   SERIAL23_IRQn
+#define TWIS23_IRQHandler             SERIAL23_IRQHandler
+#define UARTE23_IRQn                  SERIAL23_IRQn
+#define UARTE23_IRQHandler            SERIAL23_IRQHandler
+#define SPIM24_IRQn                   SERIAL24_IRQn
+#define SPIM24_IRQHandler             SERIAL24_IRQHandler
+#define SPIS24_IRQn                   SERIAL24_IRQn
+#define SPIS24_IRQHandler             SERIAL24_IRQHandler
+#define TWIM24_IRQn                   SERIAL24_IRQn
+#define TWIM24_IRQHandler             SERIAL24_IRQHandler
+#define TWIS24_IRQn                   SERIAL24_IRQn
+#define TWIS24_IRQHandler             SERIAL24_IRQHandler
+#define UARTE24_IRQn                  SERIAL24_IRQn
+#define UARTE24_IRQHandler            SERIAL24_IRQHandler
 #define SPIM30_IRQn                   SERIAL30_IRQn
 #define SPIM30_IRQHandler             SERIAL30_IRQHandler
 #define SPIS30_IRQn                   SERIAL30_IRQn
@@ -174,14 +199,14 @@ typedef enum {
 #define TWIS30_IRQHandler             SERIAL30_IRQHandler
 #define UARTE30_IRQn                  SERIAL30_IRQn
 #define UARTE30_IRQHandler            SERIAL30_IRQHandler
-#define CLOCK_IRQn                    CLOCK_POWER_IRQn
-#define CLOCK_IRQHandler              CLOCK_POWER_IRQHandler
-#define POWER_IRQn                    CLOCK_POWER_IRQn
-#define POWER_IRQHandler              CLOCK_POWER_IRQHandler
 #define COMP_IRQn                     COMP_LPCOMP_IRQn
 #define COMP_IRQHandler               COMP_LPCOMP_IRQHandler
 #define LPCOMP_IRQn                   COMP_LPCOMP_IRQn
 #define LPCOMP_IRQHandler             COMP_LPCOMP_IRQHandler
+#define CLOCK_IRQn                    CLOCK_POWER_IRQn
+#define CLOCK_IRQHandler              CLOCK_POWER_IRQHandler
+#define POWER_IRQn                    CLOCK_POWER_IRQn
+#define POWER_IRQHandler              CLOCK_POWER_IRQHandler
 
 /* =========================================================================================================================== */
 /* ================                           Processor and Core Peripheral Section                           ================ */
@@ -201,7 +226,7 @@ typedef enum {
 #define __NUM_SAUREGIONS               4             /*!< Number of regions                                                    */
 
 #include "core_cm33.h"                               /*!< ARM Cortex-M33 processor and core peripherals                        */
-#include "system_nrf.h"                              /*!< nrf54l15_application System Library                                  */
+#include "system_nrf.h"                              /*!< nrf54lm20a_application System Library                                */
 
 #endif                                               /*!< NRF_APPLICATION                                                      */
 
@@ -335,5 +360,5 @@ typedef enum {
 #ifdef __cplusplus
 }
 #endif
-#endif /* NRF54L15_APPLICATION_H */
+#endif /* NRF54LM20A_APPLICATION_H */
 
