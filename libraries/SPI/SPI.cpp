@@ -256,10 +256,25 @@ void SPIClass::detachInterrupt() {
 }
 
 // nRF54L SPI instances: SPIM00 (mapped from NRF_SPIM0 via compat) and SPIM21 (mapped from NRF_SPIM2)
+//
+// A SPIM instance only reaches GPIOs in its own power domain: SPIM00 is on
+// P2, the SPIM2x instances on P1, SPIM30 on P0. Boards whose SPI header pins
+// are not on P2 must name a reachable instance in their variant.h, e.g.:
+//
+//     #define SPI_SPIM    NRF_SPIM23
+//
+#ifndef SPI_SPIM
+  #define SPI_SPIM          NRF_SPIM0
+#endif
+
+#ifndef SPI1_SPIM
+  #define SPI1_SPIM         NRF_SPIM2
+#endif
+
 #if SPI_INTERFACES_COUNT >= 1
-SPIClass SPI(NRF_SPIM0,  PIN_SPI_MISO,  PIN_SPI_SCK,  PIN_SPI_MOSI);
+SPIClass SPI(SPI_SPIM,  PIN_SPI_MISO,  PIN_SPI_SCK,  PIN_SPI_MOSI);
 #endif
 
 #if SPI_INTERFACES_COUNT >= 2
-SPIClass SPI1(NRF_SPIM2, PIN_SPI1_MISO, PIN_SPI1_SCK, PIN_SPI1_MOSI);
+SPIClass SPI1(SPI1_SPIM, PIN_SPI1_MISO, PIN_SPI1_SCK, PIN_SPI1_MOSI);
 #endif
