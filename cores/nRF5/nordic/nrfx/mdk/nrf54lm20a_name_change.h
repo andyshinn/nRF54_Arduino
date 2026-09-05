@@ -32,23 +32,26 @@ POSSIBILITY OF SUCH DAMAGE.
 
 */
 
-#ifndef NRF54L15_PERIPHERALS_H
-#define NRF54L15_PERIPHERALS_H
+#ifndef NRF54LM20A_NAME_CHANGE_H
+#define NRF54LM20A_NAME_CHANGE_H
 
 #ifdef __cplusplus
     extern "C" {
 #endif
 
-#if defined(NRF_APPLICATION)
-  #include "nrf54l15_application_peripherals.h"
-#elif defined(NRF_FLPR)
-  #include "nrf54l15_flpr_peripherals.h"
-#else
-  #error "No processor selected"
-#endif
+
+/* ========================================= Enumerator NoDelay AltName Definitions ========================================== */
+#define PDM_FILTER_SAMPLEDELAY_DELAY_no_delay       PDM_FILTER_SAMPLEDELAY_DELAY_NoDelay
+
+/* ========================================= Enumerator Delay1Ck AltName Definitions ========================================= */
+#define PDM_FILTER_SAMPLEDELAY_DELAY_x1             PDM_FILTER_SAMPLEDELAY_DELAY_Delay1Ck
+
+/* ========================================= Enumerator INACTIVE AltName Definitions ========================================= */
+#define USBHSCORE_GINTSTS_SOF_INTACTIVE             USBHSCORE_GINTSTS_SOF_INACTIVE
+
 
 #ifdef __cplusplus
 }
 #endif
-#endif /* NRF54L15_PERIPHERALS_H */
+#endif /* NRF54LM20A_NAME_CHANGE_H */
 

@@ -32,23 +32,21 @@ POSSIBILITY OF SUCH DAMAGE.
 
 */
 
-#ifndef NRF54L15_PERIPHERALS_H
-#define NRF54L15_PERIPHERALS_H
+#ifndef NRF54LM20A_VERSION_H
+#define NRF54LM20A_VERSION_H
 
 #ifdef __cplusplus
     extern "C" {
 #endif
 
-#if defined(NRF_APPLICATION)
-  #include "nrf54l15_application_peripherals.h"
-#elif defined(NRF_FLPR)
-  #include "nrf54l15_flpr_peripherals.h"
-#else
-  #error "No processor selected"
-#endif
+
+#define MDK_SOURCE_VERSION_MAJOR 0                   /*!< Major version of the datasheet.                                      */
+#define MDK_SOURCE_VERSION_MINOR 7                   /*!< Minor version of the datasheet.                                      */
+#define MDK_SOURCE_VERSION_MICRO 1                   /*!< Micro version of the datasheet.                                      */
+
 
 #ifdef __cplusplus
 }
 #endif
-#endif /* NRF54L15_PERIPHERALS_H */
+#endif /* NRF54LM20A_VERSION_H */
 

@@ -32,23 +32,21 @@ POSSIBILITY OF SUCH DAMAGE.
 
 */
 
-#ifndef NRF54L15_PERIPHERALS_H
-#define NRF54L15_PERIPHERALS_H
+#ifndef NRF54LM20A_H
+#define NRF54LM20A_H
 
 #ifdef __cplusplus
     extern "C" {
 #endif
 
-#if defined(NRF_APPLICATION)
-  #include "nrf54l15_application_peripherals.h"
-#elif defined(NRF_FLPR)
-  #include "nrf54l15_flpr_peripherals.h"
-#else
-  #error "No processor selected"
-#endif
+#include "nrf54lm20a_types.h"
+
+#include "nrf54lm20a_global.h"
+#include "nrf54lm20a_application.h"
+#include "nrf54lm20a_flpr.h"
 
 #ifdef __cplusplus
 }
 #endif
-#endif /* NRF54L15_PERIPHERALS_H */
+#endif /* NRF54LM20A_H */
 
