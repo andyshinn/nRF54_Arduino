@@ -153,18 +153,27 @@ static uint32_t analogRead_internal( uint32_t pselp )
     NRF_SAADC->CH[i].PSELP = (SAADC_CH_PSELP_CONNECT_NC << SAADC_CH_PSELP_CONNECT_Pos);
   }
 
-  uint32_t burst_field = saadcBurst
-      ? SAADC_CH_CONFIG_BURST_Enabled
-      : SAADC_CH_CONFIG_BURST_Disabled;
-
   // nRF54L SAADC CH.CONFIG drops the RESP/RESN pull-resistor fields that
-  // nRF52 had; remaining fields are GAIN, BURST, REFSEL, MODE, TACQ, TCONV.
+  // nRF52 had; remaining fields are GAIN, REFSEL, MODE, TACQ, TCONV, plus
+  // BURST on the chips that keep it per-channel.
   NRF_SAADC->CH[0].CONFIG =
         ((saadcGain                      << SAADC_CH_CONFIG_GAIN_Pos)   & SAADC_CH_CONFIG_GAIN_Msk)
       | ((saadcReference                 << SAADC_CH_CONFIG_REFSEL_Pos) & SAADC_CH_CONFIG_REFSEL_Msk)
       | ((saadcSampleTime                << SAADC_CH_CONFIG_TACQ_Pos)   & SAADC_CH_CONFIG_TACQ_Msk)
       | ((SAADC_CH_CONFIG_MODE_SE        << SAADC_CH_CONFIG_MODE_Pos)   & SAADC_CH_CONFIG_MODE_Msk)
-      | ((burst_field                    << SAADC_CH_CONFIG_BURST_Pos)  & SAADC_CH_CONFIG_BURST_Msk);
+#if defined(SAADC_CH_CONFIG_BURST_Msk)
+      | (((saadcBurst ? SAADC_CH_CONFIG_BURST_Enabled : SAADC_CH_CONFIG_BURST_Disabled)
+                                         << SAADC_CH_CONFIG_BURST_Pos)  & SAADC_CH_CONFIG_BURST_Msk)
+#endif
+      ;
+
+#if defined(SAADC_BURST_BURST_Msk)
+  // The nRF54LM20A moved burst out of CH[n].CONFIG into a peripheral-level
+  // register; the feature is the same (take 2^OVERSAMPLE samples per
+  // TASKS_SAMPLE and average them), only the location changed.
+  NRF_SAADC->BURST = saadcBurst ? SAADC_BURST_BURST_Enabled
+                                : SAADC_BURST_BURST_Disabled;
+#endif
 
   // Single-ended: negative input is NC, positive input is the caller's pselp.
   NRF_SAADC->CH[0].PSELN = (SAADC_CH_PSELP_CONNECT_NC << SAADC_CH_PSELP_CONNECT_Pos);
