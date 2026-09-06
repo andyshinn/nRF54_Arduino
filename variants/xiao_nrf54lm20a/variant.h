@@ -94,8 +94,19 @@ static const uint8_t A7  = PIN_A7;
 #define SERIAL1_IRQ_HANDLER  SERIAL21_IRQHandler
 
 // Serial2 is the board's debug console header (not brought out to D pins).
+// It is the UART wired to the onboard SAMD11 USB-serial bridge, so it -- not
+// Serial1 -- is what a host sees when the board is plugged in.
 #define PIN_SERIAL2_TX      (39)  // P1.11
 #define PIN_SERIAL2_RX      (40)  // P1.10
+
+/*
+ * Map the plain `Serial` symbol (and SERIAL_PORT_MONITOR) onto Serial2 rather
+ * than the core's default of Serial1. Serial1 is D6/D7, which is not connected
+ * to the USB bridge, and on the MMM carrier D6/D7 are the I2C bus, so Serial1
+ * is unusable there. Sketches that print to `Serial` want the USB bridge.
+ * Serial1 stays available by name for anyone who does want D6/D7.
+ */
+#define SERIAL_PORT_CONSOLE  Serial2
 
 /*
  * SPI Interfaces
