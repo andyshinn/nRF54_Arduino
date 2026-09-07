@@ -273,20 +273,21 @@ bool AdafruitBluefruit::begin(uint8_t prph_count, uint8_t central_count)
   _prph_count    = prph_count;
   _central_count = central_count;
 
-  /* The SoftDevice keeps its state in the RAM below __data_start__, which the
-   * application's startup never clears -- it only zeroes its own .bss above
-   * it. A power cycle clears that RAM, but a watchdog reset, an
-   * NVIC_SystemReset() or an application restart does not, so after any soft
-   * reset that follows a BLE session the SoftDevice still believes it is
-   * enabled and sd_softdevice_enable() answers NRF_ERROR_INVALID_STATE.
+  /* Handle begin() being called a second time within one boot: the SoftDevice
+   * is genuinely running and has to be taken down before it can be
+   * reconfigured.
    *
-   * Take it down first rather than assuming a clean slate. The SoftDevice's
-   * RAM sits below the application's, so its state is intact and this is an
-   * ordinary disable, not a recovery from corruption. */
+   * This deliberately does NOT cover the stale-state-after-reset case, even
+   * though sd_softdevice_is_enabled() reports the same thing for both. After a
+   * reset the SoftDevice's RAM still says "enabled" while its peripherals have
+   * been reset out from under it, and disabling it in that state faults inside
+   * the SoftDevice. Reset_Handler clears that RAM at every boot precisely so
+   * that a true reading here can only mean the first case, where the hardware
+   * really is live and disable() is the right thing to do. */
   uint8_t sd_enabled = 0;
   if ( (NRF_SUCCESS == sd_softdevice_is_enabled(&sd_enabled)) && sd_enabled )
   {
-    LOG_LV1("CFG", "SoftDevice still enabled from a previous run, disabling");
+    LOG_LV1("CFG", "SoftDevice already enabled, disabling before reconfigure");
     sd_softdevice_disable();
   }
 

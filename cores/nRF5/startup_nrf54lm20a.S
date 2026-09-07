@@ -169,6 +169,40 @@ Reset_Handler:
     dsb
     isb
 
+    /* Clear the SoftDevice's RAM.
+     *
+     * The SoftDevice records whether it is enabled in the RAM below the
+     * application's, and nothing clears that: startup zeroes .bss, which is
+     * above ORIGIN(RAM), and a reset does not touch RAM at all. So after a
+     * watchdog reset, an NVIC_SystemReset() or an application restart the
+     * SoftDevice comes up still believing it is enabled, while every
+     * peripheral it owned -- radio, timers, DPPI -- has just been reset out
+     * from under it. Its bookkeeping and the hardware disagree, and
+     * sd_softdevice_disable() faults inside the SoftDevice trying to tear
+     * down state that is no longer there. sd_softdevice_enable() refuses with
+     * NRF_ERROR_INVALID_STATE. Cold boot is no better: this RAM is undefined
+     * at power-on and can read as enabled by chance.
+     *
+     * Clearing it here makes the software state match the hardware, which the
+     * reset has already put back to its power-on condition. By the time any
+     * code runs, the SoftDevice is definitionally not running, so "not
+     * enabled" is not an assumption -- it is the only thing that can be true.
+     *
+     * The top two words are left alone: they are the bootloader's
+     * double-reset detector and the SVC data word, which exist precisely to
+     * carry information across a reset (see nrf54_common.ld). */
+    ldr r0, =__softdevice_ram_start
+    ldr r1, =__softdevice_ram_end
+    mov r2, #0
+
+LoopClearSdRam:
+    cmp r0, r1
+    bcs LoopClearSdRamDone
+    str r2, [r0], #4
+    b LoopClearSdRam
+
+LoopClearSdRamDone:
+
     /* Copy .data section from FLASH to RAM. */
     ldr r0, =__etext         /* SRC: .data load address in FLASH */
     ldr r1, =__data_start__  /* DST: .data start in RAM */

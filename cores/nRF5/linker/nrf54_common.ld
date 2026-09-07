@@ -18,6 +18,20 @@ PROVIDE(__flash_arduino_start = ORIGIN(FLASH) + LENGTH(FLASH));
 PROVIDE(__flash_arduino_end   = __flash_arduino_start + 0x7000);
 PROVIDE(__bootloader_addr     = __flash_arduino_end + 0x2000);
 
+/* The SoftDevice's RAM. It sits below the application's, from the bottom of
+ * RAM up to ORIGIN(RAM), and sd_ble_enable() is handed __data_start__ as the
+ * boundary. Everything in it belongs to the SoftDevice except the top two
+ * words, which are how the application and the bootloader talk across a
+ * reset: the bootloader's double-reset detector at ORIGIN(RAM)-8 and the SVC
+ * data word at ORIGIN(RAM)-4 (the NOINIT region in the chip scripts).
+ *
+ * Reset_Handler clears this range at every boot. The SoftDevice keeps its
+ * "am I enabled" state here, and nothing else clears it -- startup only zeroes
+ * the application's .bss, which is above ORIGIN(RAM). See the comment at the
+ * clearing loop in startup_nrf54*.S for why that matters. */
+PROVIDE(__softdevice_ram_start = 0x20000000);
+PROVIDE(__softdevice_ram_end   = ORIGIN(RAM) - 8);
+
 /* __bootloader_peer_data: 0x40 bytes reserved at the very bottom of the
  * application's RAM, before .data, holding the bond information handed to the
  * bootloader across a soft reset into DFU (BLEDfu.cpp writes it,
