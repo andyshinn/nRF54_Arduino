@@ -55,9 +55,17 @@ void TwoWire::begin(void) {
                NRF_GPIO_PIN_S0D1,
                NRF_GPIO_PIN_NOSENSE);
 
+  /* PSEL must be written while the TWIM is disabled. On nRF52 a write with
+   * ENABLE already set still took; on nRF54L it is dropped, and the register
+   * keeps its reset value -- which reads back as 0x7F, since only two of the
+   * three PORT bits and none of the CONNECT bit are implemented. The result is
+   * an enabled, correctly addressed TWIM whose SCL/SDA go nowhere, so no
+   * transfer ever starts and endTransmission() waits on LASTTX forever.
+   * nrfx has always had this order (nrfx_twim_reconfigure() disables, writes
+   * PSEL, re-enables); this port did not. */
+  nrf_twim_pins_set(_p_twim, _uc_pinSCL, _uc_pinSDA);
   nrf_twim_frequency_set(_p_twim, NRF_TWIM_FREQ_100K);
   nrf_twim_enable(_p_twim);
-  nrf_twim_pins_set(_p_twim, _uc_pinSCL, _uc_pinSDA);
 
   NVIC_ClearPendingIRQ(_IRQn);
   NVIC_SetPriority(_IRQn, 3);
@@ -138,6 +146,54 @@ void TwoWire::end() {
   }
 }
 
+/* Upper bound on how long any single TWIM wait may spin.
+ *
+ * Deliberately an iteration count and not a time. Wire is reachable before the
+ * scheduler starts, where millis() and micros() both read a tick that never
+ * advances, so a time-based deadline would itself hang. Every iteration polls
+ * a volatile peripheral register, so the loop cannot be optimised away, and
+ * the bound is far above any legitimate transfer -- a byte plus ACK is about
+ * 90 us at 100 kHz -- while still being short enough that a missing or wedged
+ * device fails the call instead of wedging the firmware. */
+#define TWIM_WAIT_LIMIT   2000000UL
+
+/* Wait for one event. Returns false if the bound was hit. */
+static bool twim_wait_event(NRF_TWIM_Type * p_twim, nrf_twim_event_t evt)
+{
+  for (uint32_t i = 0; i < TWIM_WAIT_LIMIT; i++)
+  {
+    if (nrf_twim_event_check(p_twim, evt)) return true;
+  }
+  return false;
+}
+
+/* Wait for one event or for ERROR, whichever comes first. */
+static bool twim_wait_event_or_error(NRF_TWIM_Type * p_twim, nrf_twim_event_t evt)
+{
+  for (uint32_t i = 0; i < TWIM_WAIT_LIMIT; i++)
+  {
+    if (nrf_twim_event_check(p_twim, evt) ||
+        nrf_twim_event_check(p_twim, NRF_TWIM_EVENT_ERROR)) return true;
+  }
+  return false;
+}
+
+/* Give up on a transfer that timed out: stop it, then take the peripheral
+ * through disable to drop any latched state so the next transfer starts
+ * clean. PSEL survives disable, so the pin routing is not lost. */
+static void twim_abort(NRF_TWIM_Type * p_twim)
+{
+  nrf_twim_task_trigger(p_twim, NRF_TWIM_TASK_STOP);
+  (void) twim_wait_event(p_twim, NRF_TWIM_EVENT_STOPPED);
+
+  nrf_twim_disable(p_twim);
+  nrf_twim_event_clear(p_twim, NRF_TWIM_EVENT_STOPPED);
+  nrf_twim_event_clear(p_twim, NRF_TWIM_EVENT_SUSPENDED);
+  nrf_twim_event_clear(p_twim, NRF_TWIM_EVENT_ERROR);
+  (void) nrf_twim_errorsrc_get_and_clear(p_twim);
+  nrf_twim_enable(p_twim);
+}
+
 uint8_t TwoWire::requestFrom(uint8_t address, size_t quantity, bool stopBit)
 {
   if(quantity == 0)
@@ -154,24 +210,38 @@ uint8_t TwoWire::requestFrom(uint8_t address, size_t quantity, bool stopBit)
   nrf_twim_rx_buffer_set(_p_twim, rxBuffer._aucBuffer, quantity);
   nrf_twim_task_trigger(_p_twim, NRF_TWIM_TASK_STARTRX);
 
-  while(!nrf_twim_event_check(_p_twim, NRF_TWIM_EVENT_RXSTARTED) &&
-        !nrf_twim_event_check(_p_twim, NRF_TWIM_EVENT_ERROR));
+  if (!twim_wait_event_or_error(_p_twim, NRF_TWIM_EVENT_RXSTARTED))
+  {
+    twim_abort(_p_twim);
+    return 0;
+  }
   nrf_twim_event_clear(_p_twim, NRF_TWIM_EVENT_RXSTARTED);
 
-  while(!nrf_twim_event_check(_p_twim, NRF_TWIM_EVENT_LASTRX) &&
-        !nrf_twim_event_check(_p_twim, NRF_TWIM_EVENT_ERROR));
+  if (!twim_wait_event_or_error(_p_twim, NRF_TWIM_EVENT_LASTRX))
+  {
+    twim_abort(_p_twim);
+    return 0;
+  }
   nrf_twim_event_clear(_p_twim, NRF_TWIM_EVENT_LASTRX);
 
   if (stopBit || nrf_twim_event_check(_p_twim, NRF_TWIM_EVENT_ERROR))
   {
     nrf_twim_task_trigger(_p_twim, NRF_TWIM_TASK_STOP);
-    while(!nrf_twim_event_check(_p_twim, NRF_TWIM_EVENT_STOPPED));
+    if (!twim_wait_event(_p_twim, NRF_TWIM_EVENT_STOPPED))
+    {
+      twim_abort(_p_twim);
+      return 0;
+    }
     nrf_twim_event_clear(_p_twim, NRF_TWIM_EVENT_STOPPED);
   }
   else
   {
     nrf_twim_task_trigger(_p_twim, NRF_TWIM_TASK_SUSPEND);
-    while(!nrf_twim_event_check(_p_twim, NRF_TWIM_EVENT_SUSPENDED));
+    if (!twim_wait_event(_p_twim, NRF_TWIM_EVENT_SUSPENDED))
+    {
+      twim_abort(_p_twim);
+      return 0;
+    }
     nrf_twim_event_clear(_p_twim, NRF_TWIM_EVENT_SUSPENDED);
   }
 
@@ -218,26 +288,40 @@ uint8_t TwoWire::endTransmission(bool stopBit)
   nrf_twim_tx_buffer_set(_p_twim, txBuffer._aucBuffer, txBuffer.available());
   nrf_twim_task_trigger(_p_twim, NRF_TWIM_TASK_STARTTX);
 
-  while(!nrf_twim_event_check(_p_twim, NRF_TWIM_EVENT_TXSTARTED) &&
-        !nrf_twim_event_check(_p_twim, NRF_TWIM_EVENT_ERROR));
+  if (!twim_wait_event_or_error(_p_twim, NRF_TWIM_EVENT_TXSTARTED))
+  {
+    twim_abort(_p_twim);
+    return 4;
+  }
   nrf_twim_event_clear(_p_twim, NRF_TWIM_EVENT_TXSTARTED);
 
   if (txBuffer.available()) {
-    while(!nrf_twim_event_check(_p_twim, NRF_TWIM_EVENT_LASTTX) &&
-          !nrf_twim_event_check(_p_twim, NRF_TWIM_EVENT_ERROR));
+    if (!twim_wait_event_or_error(_p_twim, NRF_TWIM_EVENT_LASTTX))
+    {
+      twim_abort(_p_twim);
+      return 4;
+    }
   }
   nrf_twim_event_clear(_p_twim, NRF_TWIM_EVENT_LASTTX);
 
   if (stopBit || nrf_twim_event_check(_p_twim, NRF_TWIM_EVENT_ERROR))
   {
     nrf_twim_task_trigger(_p_twim, NRF_TWIM_TASK_STOP);
-    while(!nrf_twim_event_check(_p_twim, NRF_TWIM_EVENT_STOPPED));
+    if (!twim_wait_event(_p_twim, NRF_TWIM_EVENT_STOPPED))
+    {
+      twim_abort(_p_twim);
+      return 4;
+    }
     nrf_twim_event_clear(_p_twim, NRF_TWIM_EVENT_STOPPED);
   }
   else
   {
     nrf_twim_task_trigger(_p_twim, NRF_TWIM_TASK_SUSPEND);
-    while(!nrf_twim_event_check(_p_twim, NRF_TWIM_EVENT_SUSPENDED));
+    if (!twim_wait_event(_p_twim, NRF_TWIM_EVENT_SUSPENDED))
+    {
+      twim_abort(_p_twim);
+      return 4;
+    }
     nrf_twim_event_clear(_p_twim, NRF_TWIM_EVENT_SUSPENDED);
   }
 
