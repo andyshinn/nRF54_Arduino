@@ -126,25 +126,35 @@ SECTIONS
         PROVIDE(__stop_noinit_data = .);
     } > RAM
 
+    /* Heap and stack are sized here, not by input sections. The Nordic MDK
+     * startup files reserve .heap/.stack with .space directives; the
+     * hand-written startup_nrf54l15.S / startup_nrf54lm20a.S in this core do
+     * not, and nothing else in the tree emits those sections either. Deriving
+     * the sizes from KEEP(*(.heap*)) / SIZEOF(.stack_dummy) therefore made
+     * both of them zero: __HeapLimit landed on __HeapBase, the first _sbrk()
+     * (new.cpp) returned -1, and malloc/new returned NULL for the life of the
+     * program -- including during static construction, before setup() runs.
+     *
+     * MSP only has to carry the startup path, the SoftDevice's handlers and
+     * whatever ISRs nest on them; FreeRTOS tasks get their stacks from the
+     * heap. 8 KB is what Adafruit's nRF52 core reserves for the same job.
+     * Everything between the end of .bss and the stack is heap. */
+    __stack_size = 0x2000;
+
     .heap (COPY):
     {
+        . = ALIGN(8);
         __HeapBase = .;
         __end__ = .;
         PROVIDE(end = .);
-        KEEP(*(.heap*))
-        __HeapLimit = .;
     } > RAM
 
-    .stack_dummy (COPY):
-    {
-        KEEP(*(.stack*))
-    } > RAM
-
-    __StackTop = ORIGIN(RAM) + LENGTH(RAM);
-    __StackLimit = __StackTop - SIZEOF(.stack_dummy);
+    __StackTop   = ORIGIN(RAM) + LENGTH(RAM);
+    __StackLimit = __StackTop - __stack_size;
+    __HeapLimit  = __StackLimit;
     PROVIDE(__stack = __StackTop);
 
-    ASSERT(__StackLimit >= __HeapLimit, "region RAM overflowed with stack")
+    ASSERT(__HeapLimit > __HeapBase, "region RAM overflowed: no room left for the heap")
     DataInitFlashUsed = __bss_start__ - __data_start__;
     CodeFlashUsed = __etext - ORIGIN(FLASH);
     TotalFlashUsed = CodeFlashUsed + DataInitFlashUsed;
