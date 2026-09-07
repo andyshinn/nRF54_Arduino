@@ -153,6 +153,11 @@ bool nRF54CryptoClass::sharedSecret(const uint8_t peer_pubkey[64],
 
 bool nRF54CryptoClass::random(uint8_t* dest, size_t len)
 {
+    // Start the TRNG on demand. Callers that only want entropy -- seeding the
+    // SoftDevice's RNG, for one -- should not have to know that the LESC path
+    // is what normally calls begin().
+    if (!_rng_started && !cracen_rng_start()) return false;
+
     return cracen_rng_fill(dest, len);
 }
 

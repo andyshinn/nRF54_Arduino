@@ -36,6 +36,30 @@
 
 #include "bluefruit.h"
 #include "utility/bonding.h"
+#include "nRF54Crypto.h"
+
+/* S145 will not bring up the BLE stack until its RNG has been seeded --
+ * sd_ble_enable() answers NRF_ERROR_INVALID_STATE otherwise -- and it asks to
+ * be re-seeded at runtime with NRF_EVT_RAND_SEED_REQUEST. S140 on nRF52 had no
+ * such requirement, which is why nRF52-derived code never calls this.
+ *
+ * nrf_soc.h requires SD_RAND_SEED_SIZE bytes from a NIST SP 800-90B compliant
+ * source. On nRF54L that is the CRACEN TRNG. Anything derived from
+ * FICR->INFO.DEVICEID is a constant per device and would make every session
+ * key predictable, so it is not an acceptable stand-in. CRACEN is not among
+ * the peripherals nrf_sd_def.h reserves for the SoftDevice, so the
+ * application may drive it. */
+static bool seed_softdevice_rng(void)
+{
+  uint8_t seed[SD_RAND_SEED_SIZE];
+
+  if ( !nRF54Crypto.random(seed, sizeof(seed)) ) return false;
+
+  uint32_t err = sd_rand_seed_set(seed);
+  memset(seed, 0, sizeof(seed));   // don't leave entropy on the stack
+
+  return (err == NRF_SUCCESS);
+}
 
 #ifndef CFG_BLE_TX_POWER_LEVEL
 #define CFG_BLE_TX_POWER_LEVEL    0
@@ -249,6 +273,23 @@ bool AdafruitBluefruit::begin(uint8_t prph_count, uint8_t central_count)
   _prph_count    = prph_count;
   _central_count = central_count;
 
+  /* The SoftDevice keeps its state in the RAM below __data_start__, which the
+   * application's startup never clears -- it only zeroes its own .bss above
+   * it. A power cycle clears that RAM, but a watchdog reset, an
+   * NVIC_SystemReset() or an application restart does not, so after any soft
+   * reset that follows a BLE session the SoftDevice still believes it is
+   * enabled and sd_softdevice_enable() answers NRF_ERROR_INVALID_STATE.
+   *
+   * Take it down first rather than assuming a clean slate. The SoftDevice's
+   * RAM sits below the application's, so its state is intact and this is an
+   * ordinary disable, not a recovery from corruption. */
+  uint8_t sd_enabled = 0;
+  if ( (NRF_SUCCESS == sd_softdevice_is_enabled(&sd_enabled)) && sd_enabled )
+  {
+    LOG_LV1("CFG", "SoftDevice still enabled from a previous run, disabling");
+    sd_softdevice_disable();
+  }
+
   // Configure Clock
 #if defined( USE_LFXO )
   nrf_clock_lf_cfg_t clock_cfg =
@@ -259,7 +300,14 @@ bool AdafruitBluefruit::begin(uint8_t prph_count, uint8_t central_count)
     .rc_temp_ctiv  = 0,
     .accuracy      = NRF_CLOCK_LF_ACCURACY_20_PPM,
     .hfclk_latency = 1500,
-    .hfint_ctiv    = 0
+    /* HFINT calibration interval in seconds, valid range 1-255 (nrf_sdm.h).
+     * This is HFINT calibration and applies whatever the LF source is, so it
+     * must be set on this branch too; 0 is out of range and made
+     * sd_softdevice_enable() return NRF_ERROR_INVALID_PARAM. 4 is what the
+     * SoftDevice itself uses when p_clock_lf_cfg is NULL, and it leaves ample
+     * margin on the "no more than 10 degrees Celsius per interval"
+     * constraint. */
+    .hfint_ctiv    = 4
   };
 #elif defined( USE_LFRC )
   nrf_clock_lf_cfg_t clock_cfg =
@@ -312,6 +360,11 @@ bool AdafruitBluefruit::begin(uint8_t prph_count, uint8_t central_count)
 
   // Roles
   varclr(&blecfg);
+  /* S145 v10 added adv_set_count ahead of the three fields S140 had. varclr()
+   * leaves it 0, which is out of range and made this sd_ble_cfg_set() return
+   * NRF_ERROR_INVALID_PARAM. BLE_GAP_ADV_SET_COUNT_MAX is 1 on this
+   * SoftDevice, so the default is also the only value. */
+  blecfg.gap_cfg.role_count_cfg.adv_set_count      = BLE_GAP_ADV_SET_COUNT_DEFAULT;
   blecfg.gap_cfg.role_count_cfg.periph_role_count  = _prph_count;
   blecfg.gap_cfg.role_count_cfg.central_role_count = _central_count;
   blecfg.gap_cfg.role_count_cfg.central_sec_count  = (_central_count ? 1 : 0); // 1 should be enough
@@ -387,6 +440,10 @@ bool AdafruitBluefruit::begin(uint8_t prph_count, uint8_t central_count)
     blecfg.conn_cfg.params.gattc_conn_cfg.write_cmd_tx_queue_size = _sd_cfg.central.wrcmd_qsize;
     VERIFY_STATUS ( sd_ble_cfg_set(BLE_CONN_CFG_GATTC, &blecfg, ram_start), false );
   }
+
+  /* Seed the RNG before enabling the stack: sd_ble_enable() reports
+   * NRF_ERROR_INVALID_STATE if the generator has not been seeded. */
+  VERIFY( seed_softdevice_rng(), false );
 
   // Enable BLE stack
   // The memory requirement for a specific configuration will not increase
@@ -673,17 +730,8 @@ void adafruit_soc_task(void* arg)
             break;
 
             case NRF_EVT_RAND_SEED_REQUEST:
-            {
-              // S145 requires the application to seed the RNG
-              uint8_t seed[SD_RAND_SEED_SIZE];
-              // Use FICR device ID and GRTC counter as entropy source
-              uint32_t* seed32 = (uint32_t*)seed;
-              for (uint32_t i = 0; i < SD_RAND_SEED_SIZE / 4; i++)
-              {
-                seed32[i] = NRF_FICR->INFO.DEVICEID[i & 1] ^ (uint32_t)(NRF_GRTC->SYSCOUNTER[0].SYSCOUNTERL + i);
-              }
-              sd_rand_seed_set(seed);
-            }
+              LOG_LV1("SOC", "NRF_EVT_RAND_SEED_REQUEST");
+              (void) seed_softdevice_rng();
             break;
 
             default: break;
