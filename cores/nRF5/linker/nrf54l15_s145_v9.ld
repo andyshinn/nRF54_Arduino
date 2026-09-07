@@ -1,3 +1,9 @@
+/* Unused by the build: adafruit.py sets LDSCRIPT_PATH to
+ * variants/<variant>/<board_build.ldscript>, so the copy under variants/ is the
+ * one that links. Kept only so this directory holds a full set; any edit here
+ * must be mirrored there or the two silently disagree (they already did once --
+ * this file still had the RAM length that put __StackTop in unmapped memory).
+ * nrf54_common.ld is the only script in here the linker actually reads. */
 /* nRF54L15 Application linker script with S145 v9.0.0 SoftDevice */
 SEARCH_DIR(.)
 GROUP(-lgcc -lc -lnosys)

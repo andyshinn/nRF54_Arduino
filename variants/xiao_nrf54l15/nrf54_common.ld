@@ -10,9 +10,10 @@ ENTRY(Reset_Handler)
  *   nRF54L05: 0x47000-0x4DFFF
  *   nRF54L10: 0xC7000-0xCDFFF
  *   nRF54L15: 0x147000-0x14DFFF
+ *   nRF54LM20A: 0x1C7000-0x1CDFFF
  *
  * The 8 KB gap between __flash_arduino_end and __bootloader_addr is the
- * same on all three chips (page alignment for the bootloader entry). */
+ * same on all four chips (page alignment for the bootloader entry). */
 PROVIDE(__flash_arduino_start = ORIGIN(FLASH) + LENGTH(FLASH));
 PROVIDE(__flash_arduino_end   = __flash_arduino_start + 0x7000);
 PROVIDE(__bootloader_addr     = __flash_arduino_end + 0x2000);
