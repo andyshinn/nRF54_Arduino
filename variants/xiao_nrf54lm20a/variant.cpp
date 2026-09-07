@@ -58,8 +58,8 @@ const uint32_t g_ADigitalPinMap[] =
   107,  // D27 = P3.11
 
   // Internal pins
-  54,   // 28 = LED_BLUE = P1.22
-  55,   // 29 = LED_RED = P1.23
+  54,   // 28 = LED_RED = P1.22
+  55,   // 29 = LED_BLUE = P1.23
   56,   // 30 = LED_GREEN = P1.24
   9,    // 31 = BUTTON = P0.09
   44,   // 32 = POWER_EN = P1.12
@@ -84,7 +84,7 @@ const uint32_t g_ADigitalPinMap[] =
 
 void initVariant()
 {
-  // RGB LED off (active high)
+  // RGB LED off (active low)
   pinMode(PIN_LED1, OUTPUT);
   ledOff(PIN_LED1);
   pinMode(PIN_LED2, OUTPUT);
