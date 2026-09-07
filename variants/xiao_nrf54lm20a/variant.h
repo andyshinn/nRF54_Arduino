@@ -33,18 +33,19 @@ extern "C"
 /*
  * LEDs
  *
- * On-board RGB LED, all three channels active high (the XIAO nRF54L15's
- * single LED is active low -- don't copy LED_STATE_ON between the two).
+ * On-board RGB LED. Zephyr's xiao_nrf54lm20a-common.dtsi has red on P1.22,
+ * blue on P1.23 and green on P1.24, all three GPIO_ACTIVE_LOW, which is also
+ * what nRF54_Bootloader's src/boards/xiao_nrf54lm20a/board.h uses.
  */
-#define PIN_LED1             (28)  // P1.22 blue
-#define PIN_LED2             (29)  // P1.23 red
+#define PIN_LED1             (28)  // P1.22 red
+#define PIN_LED2             (29)  // P1.23 blue
 #define PIN_LED3             (30)  // P1.24 green
 
 #define LED_BUILTIN          PIN_LED1
-#define LED_BLUE             PIN_LED1
-#define LED_RED              PIN_LED2
+#define LED_RED              PIN_LED1
+#define LED_BLUE             PIN_LED2
 #define LED_GREEN            PIN_LED3
-#define LED_STATE_ON         1
+#define LED_STATE_ON         0
 
 /*
  * Button
