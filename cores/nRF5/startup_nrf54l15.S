@@ -112,6 +112,29 @@ Reset_Handler:
     /* Disable interrupts */
     cpsid i
 
+    /* Claim the vector table.
+     *
+     * On nRF52 the MBR lives at address 0 and forwards every exception, so an
+     * application entered from a bootloader can leave VTOR alone. nRF54L has
+     * no MBR. nRF54_Bootloader's boot stub points VTOR at the bootloader's own
+     * table and its app-start path never moves it, so an application that does
+     * not claim VTOR here keeps running the bootloader's handlers -- which
+     * kills FreeRTOS at the first context switch, because vPortStartFirstTask's
+     * SVC and the following PendSV/SysTick dispatch into the wrong image.
+     *
+     * Note this image's table is at the BOTTOM of RRAM (FLASH origin 0x1000)
+     * and the SoftDevice sits at the top, the inverse of the nRF52 layout.
+     * Do not "correct" this toward nRF52's SoftDevice-at-MBR_SIZE convention.
+     *
+     * SystemInit is not the place for it: the weak stub at the end of this
+     * file is overridden by the MDK's system_nrf54l.c, which never touches
+     * VTOR. */
+    ldr r0, =__isr_vector
+    ldr r1, =0xE000ED08          /* SCB->VTOR */
+    str r0, [r1]
+    dsb
+    isb
+
     /* Copy .data section from FLASH to RAM. */
     ldr r0, =__etext         /* SRC: .data load address in FLASH */
     ldr r1, =__data_start__  /* DST: .data start in RAM */
