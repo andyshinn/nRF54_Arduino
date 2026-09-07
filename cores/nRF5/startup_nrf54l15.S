@@ -52,8 +52,21 @@ g_pfnVectors:
     .word   SysTick_Handler         /* 15: SysTick Handler */
 
     /* External Interrupts (nRF54L15 specific). */
-    /* IRQ 0..69 */
-    .rept 70
+    /* IRQ 0..27 */
+    .rept 28
+    .word   Default_Handler
+    .endr
+    /* IRQ 28..31: SWI00..SWI03. SWI01 is SD_EVT_IRQn (nrf_soc.h), the line the
+     * SoftDevice raises to hand the application BLE and SoC events, and
+     * bluefruit.cpp defines SD_EVT_IRQHandler for it. Leaving these as
+     * Default_Handler put that slot on an infinite loop, so the first
+     * SoftDevice event after Bluefruit.begin() hung the device. */
+    .word   SWI00_IRQHandler
+    .word   SWI01_IRQHandler
+    .word   SWI02_IRQHandler
+    .word   SWI03_IRQHandler
+    /* IRQ 32..69 */
+    .rept 38
     .word   Default_Handler
     .endr
     /* IRQ 70..71: AAR00/CCM00 and ECB00. */
@@ -249,6 +262,30 @@ SysTick_Handler:
 /* *****************************************************************************
  * Default Interrupt Handler
  * *****************************************************************************/
+
+    .weak SWI00_IRQHandler
+    .type SWI00_IRQHandler, %function
+SWI00_IRQHandler:
+    bx lr
+    .size SWI00_IRQHandler, .-SWI00_IRQHandler
+
+    .weak SWI01_IRQHandler
+    .type SWI01_IRQHandler, %function
+SWI01_IRQHandler:
+    bx lr
+    .size SWI01_IRQHandler, .-SWI01_IRQHandler
+
+    .weak SWI02_IRQHandler
+    .type SWI02_IRQHandler, %function
+SWI02_IRQHandler:
+    bx lr
+    .size SWI02_IRQHandler, .-SWI02_IRQHandler
+
+    .weak SWI03_IRQHandler
+    .type SWI03_IRQHandler, %function
+SWI03_IRQHandler:
+    bx lr
+    .size SWI03_IRQHandler, .-SWI03_IRQHandler
 
     .weak AAR00_CCM00_IRQHandler
     .type AAR00_CCM00_IRQHandler, %function
