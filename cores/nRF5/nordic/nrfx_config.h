@@ -176,7 +176,14 @@
 // driver we want compiled.
 //------------------------------------------------------------------
 
-#define NRFX_CLOCK_ENABLED                          1
+// The SoftDevice owns the CLOCK/POWER peripheral on nRF54L
+// (nrf_sd_def.h reserves CLOCK_POWER via the SoftDevice's own vector
+// table, and the application reaches it through sd_clock_hfclk_request
+// / sd_power_*). nrfx_power.c also defines CLOCK_POWER_IRQHandler,
+// which collides with the forwarder in nrf54l_sd_isr.S, and
+// nrfx_clock.c references an nrfx_clock_lfclk_irq_handler that this
+// build does not provide. LFCLK is started directly by wiring.c.
+#define NRFX_CLOCK_ENABLED                          0
 #define NRFX_CLOCK_HFCLK_ENABLED                    1
 #define NRFX_CLOCK_HFCLK192M_ENABLED                1
 #define NRFX_CLOCK_HFCLKAUDIO_ENABLED               1
@@ -199,7 +206,8 @@
 #define NRFX_LPCOMP_ENABLED                         1
 #define NRFX_NFCT_ENABLED                           1
 #define NRFX_PDM_ENABLED                            1
-#define NRFX_POWER_ENABLED                          1
+// See NRFX_CLOCK_ENABLED above: CLOCK/POWER belongs to the SoftDevice.
+#define NRFX_POWER_ENABLED                          0
 #define NRFX_PWM_ENABLED                            1
 #define NRFX_QDEC_ENABLED                           1
 #define NRFX_RRAMC_ENABLED                          1

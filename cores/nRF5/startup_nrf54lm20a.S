@@ -79,8 +79,20 @@ g_pfnVectors:
     .word   Default_Handler
     /* IRQ 77: SERIAL00 (UARTE00/SPIM00/TWIM00) - Serial1 */
     .word   SERIAL00_IRQHandler
-    /* IRQ 78..197 */
-    .rept 120
+    /* IRQ 78..132 */
+    .rept 55
+    .word   Default_Handler
+    .endr
+    /* IRQ 133: TIMER10 - forwarded to the SoftDevice (nrf54l_sd_isr.S). */
+    .word   TIMER10_IRQHandler
+    /* IRQ 134..137 */
+    .rept 4
+    .word   Default_Handler
+    .endr
+    /* IRQ 138: RADIO_0 - forwarded to the SoftDevice. */
+    .word   RADIO_0_IRQHandler
+    /* IRQ 139..197 */
+    .rept 59
     .word   Default_Handler
     .endr
     /* IRQ 198: SERIAL20 - Serial2, and the legacy SPI0/TWI0 compat alias. */
@@ -107,8 +119,17 @@ g_pfnVectors:
     .word   GRTC_0_IRQHandler
     .word   GRTC_1_IRQHandler
     .word   GRTC_2_IRQHandler
-    /* IRQ 229..289 */
-    .rept 61
+    /* IRQ 229: GRTC_3 - the SoftDevice's GRTC group (SD_GRTC_IRQn_USED). The
+     * FreeRTOS tick is on GRTC_2, so the two do not overlap. */
+    .word   GRTC_3_IRQHandler
+    /* IRQ 230..269 */
+    .rept 40
+    .word   Default_Handler
+    .endr
+    /* IRQ 270: CLOCK_POWER - forwarded to the SoftDevice. */
+    .word   CLOCK_POWER_IRQHandler
+    /* IRQ 271..289 */
+    .rept 19
     .word   Default_Handler
     .endr
 

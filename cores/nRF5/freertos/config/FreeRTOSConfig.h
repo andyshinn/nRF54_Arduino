@@ -172,7 +172,10 @@ See http://www.FreeRTOS.org/RTOS-Cortex-M3-M4.html. */
 /* Definitions that map the FreeRTOS port interrupt handlers to their CMSIS
 standard names - or at least those used in the unmodified vector table. */
 
-#define vPortSVCHandler                                          SVC_Handler
+/* vPortSVCHandler is deliberately NOT renamed to SVC_Handler. On nRF54L the
+ * SVC vector has to be shared: cores/nRF5/nrf54l_sd_isr.S owns SVC_Handler,
+ * keeps SVC 0x00..0x0F for the application and forwards the rest to the
+ * SoftDevice, branching here for FreeRTOS's svc 0. */
 #define xPortPendSVHandler                                       PendSV_Handler
 
 /*-----------------------------------------------------------

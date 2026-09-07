@@ -78,8 +78,20 @@ g_pfnVectors:
     .endr
     /* IRQ 74: SERIAL00 (UARTE00/SPIM00/TWIM00) */
     .word   SERIAL00_IRQHandler
-    /* IRQ 75..148 */
-    .rept 74
+    /* IRQ 75..132 */
+    .rept 58
+    .word   Default_Handler
+    .endr
+    /* IRQ 133: TIMER10 - forwarded to the SoftDevice (nrf54l_sd_isr.S). */
+    .word   TIMER10_IRQHandler
+    /* IRQ 134..137 */
+    .rept 4
+    .word   Default_Handler
+    .endr
+    /* IRQ 138: RADIO_0 - forwarded to the SoftDevice. */
+    .word   RADIO_0_IRQHandler
+    /* IRQ 139..148 */
+    .rept 10
     .word   Default_Handler
     .endr
     /* IRQ 149..150: TWIM/TWIS instances used by Wire target IRQ mode. */
@@ -107,8 +119,20 @@ g_pfnVectors:
     .word   GRTC_0_IRQHandler
     .word   GRTC_1_IRQHandler
     .word   GRTC_2_IRQHandler
-    /* IRQ 229..239 */
-    .rept 11
+    /* IRQ 229: GRTC_3 - the SoftDevice's GRTC group (SD_GRTC_IRQn_USED). The
+     * FreeRTOS tick is on GRTC_2, so the two do not overlap. */
+    .word   GRTC_3_IRQHandler
+    /* IRQ 230..260 */
+    .rept 31
+    .word   Default_Handler
+    .endr
+    /* IRQ 261: CLOCK_POWER - forwarded to the SoftDevice. */
+    .word   CLOCK_POWER_IRQHandler
+    /* IRQ 262..269. The table used to stop at 239, but the highest line on
+     * L05/L10/L15 is GPIOTE30_1 at 269, so everything from 240 up -- including
+     * CLOCK_POWER -- vectored off the end of g_pfnVectors into whatever .text
+     * followed it. */
+    .rept 8
     .word   Default_Handler
     .endr
 
