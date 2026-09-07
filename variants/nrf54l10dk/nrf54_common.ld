@@ -18,6 +18,20 @@ PROVIDE(__flash_arduino_start = ORIGIN(FLASH) + LENGTH(FLASH));
 PROVIDE(__flash_arduino_end   = __flash_arduino_start + 0x7000);
 PROVIDE(__bootloader_addr     = __flash_arduino_end + 0x2000);
 
+/* __bootloader_peer_data: 0x40 bytes reserved at the very bottom of the
+ * application's RAM, before .data, holding the bond information handed to the
+ * bootloader across a soft reset into DFU (BLEDfu.cpp writes it,
+ * dfu_ble_svc.c in nRF54_Bootloader reads it).
+ *
+ * Both images place it at their own ORIGIN(RAM), which is the same address on
+ * every nRF54L target here, so this is a contract between the two and not a
+ * free choice. It has to be a hole in the memory map rather than an ordinary
+ * variable: nothing may be loaded or zeroed over it, or the data would not
+ * survive the reset that is the entire point.
+ *
+ * dfu_ble_peer_data_t is 60 bytes plus a 16-bit CRC = 62; 0x40 rounds that up
+ * and keeps .data 8-byte aligned. */
+
 /* __softdevice_addr: base of the SoftDevice image in RRAM. It cannot be
  * derived from FLASH/__bootloader_addr -- the SoftDevice sits above the
  * bootloader at a chip-specific offset (0x8C00 on L05/L10/L15 with s145
@@ -72,6 +86,23 @@ SECTIONS
         KEEP(*(svc_data))
         PROVIDE(__stop_svc_data = .);
     } > NOINIT
+
+    /* Bond handoff window -- see __bootloader_peer_data above.
+     *
+     * Must be the first output section allocated in RAM, ahead of .fs_data as
+     * well as .data, or its address moves the moment anything contributes an
+     * fs_data input section. NOLOAD so nothing is written over it at startup.
+     * The ASSERT below is the contract with the bootloader: if this ever stops
+     * landing on ORIGIN(RAM), the link fails rather than shipping a DFU that
+     * silently loses its bond. */
+    .peer_data (NOLOAD) :
+    {
+        __bootloader_peer_data = .;
+        . = . + 0x40;
+    } > RAM
+
+    ASSERT(__bootloader_peer_data == ORIGIN(RAM),
+           "bond handoff window must start at ORIGIN(RAM)")
 
     /* Filesystem data */
     .fs_data :

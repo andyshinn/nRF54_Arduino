@@ -119,15 +119,23 @@ static void bledfu_control_wr_authorize_cb(uint16_t conn_hdl, BLECharacteristic*
       }peer_data_t;
 
       VERIFY_STATIC(offsetof(peer_data_t, crc16) == 60);
+      VERIFY_STATIC(sizeof(peer_data_t) <= 0x40);
 
       /* Save Peer data
-       * Peer data address is defined in bootloader linker @0x20007F80
        * - If bonded : save Security information
        * - Otherwise : save Address for direct advertising
        *
+       * The window is the 0x40 bytes nrf54_common.ld reserves at ORIGIN(RAM),
+       * which is where nRF54_Bootloader's dfu_ble_svc.c places its own
+       * .noinit copy. It used to be the literal 0x20007F80, which is the
+       * nRF52832 address: on nRF54L that lands in the middle of the running
+       * application's .bss, so this both corrupted RAM and left the bootloader
+       * reading a window the application never wrote.
+       *
        * TODO may force bonded only for security reason
        */
-      peer_data_t* peer_data = (peer_data_t*) (0x20007F80UL);
+      extern uint32_t __bootloader_peer_data[]; // defined in nrf54_common.ld
+      peer_data_t* peer_data = (peer_data_t*) __bootloader_peer_data;
       varclr(peer_data);
 
       // Get CCCD
