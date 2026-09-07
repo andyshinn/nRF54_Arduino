@@ -78,13 +78,33 @@ typedef unsigned long UBaseType_t;
 /* GRTC configuration for nRF54L FreeRTOS tick */
 #define portNRF_GRTC_REG        NRF_GRTC
 #define portNRF_GRTC_CC_CH      4
-/* GRTC IRQ group depends on security domain (set in nrf54l15_interim.h) */
-#if defined(GRTC_IRQ_GROUP) && (GRTC_IRQ_GROUP == 1)
-#define portNRF_GRTC_IRQn       GRTC_1_IRQn
-#elif defined(GRTC_IRQ_GROUP) && (GRTC_IRQ_GROUP == 0)
-#define portNRF_GRTC_IRQn       GRTC_0_IRQn
+
+/* Every local domain gets its own slice of the GRTC: its own interrupt line,
+ * its own INTEN/INTENSET/INTENCLR/INTPEND registers, and its own SYSCOUNTER
+ * read port with its own ACTIVE request. One index selects all of them, and
+ * the MDK publishes it as GRTC_IRQ_GROUP (nrf54*_interim.h): 2 for the secure
+ * application core, 1 for the non-secure one, 0 for the FLPR.
+ *
+ * Derive the IRQ number from that single index rather than picking it
+ * separately. This port previously took GRTC_2_IRQn while reading
+ * SYSCOUNTER[0] and enabling INTENSET0 -- three different domains -- and the
+ * tick simply never fired. The HAL's GRTC_SYSCOUNTER / GRTC_INTENSET /
+ * GRTC_INTENCLR macros (nrf_grtc.h) resolve off the same GRTC_IRQ_GROUP, so
+ * port_cmsis_systick.c uses those directly. */
+#if defined(GRTC_IRQ_GROUP)
+#define portNRF_GRTC_DOMAIN     GRTC_IRQ_GROUP
 #else
+#define portNRF_GRTC_DOMAIN     2
+#endif
+
+#if   (portNRF_GRTC_DOMAIN == 0)
+#define portNRF_GRTC_IRQn       GRTC_0_IRQn
+#elif (portNRF_GRTC_DOMAIN == 1)
+#define portNRF_GRTC_IRQn       GRTC_1_IRQn
+#elif (portNRF_GRTC_DOMAIN == 2)
 #define portNRF_GRTC_IRQn       GRTC_2_IRQn
+#else
+#error "Unsupported GRTC_IRQ_GROUP"
 #endif
 /* GRTC SYSCOUNTER runs at 1 MHz (not LFCLK). configSYSTICK_CLOCK_HZ = 1000000 */
 #define portNRF_GRTC_TICKS_PER_SYSTICK  ( configSYSTICK_CLOCK_HZ / configTICK_RATE_HZ )
