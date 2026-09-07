@@ -18,6 +18,16 @@ PROVIDE(__flash_arduino_start = ORIGIN(FLASH) + LENGTH(FLASH));
 PROVIDE(__flash_arduino_end   = __flash_arduino_start + 0x7000);
 PROVIDE(__bootloader_addr     = __flash_arduino_end + 0x2000);
 
+/* __softdevice_addr: base of the SoftDevice image in RRAM. It cannot be
+ * derived from FLASH/__bootloader_addr -- the SoftDevice sits above the
+ * bootloader at a chip-specific offset (0x8C00 on L05/L10/L15 with s145
+ * v9.0.0, 0xA800 on LM20A with s145 v10.0.1) -- so each chip script sets it
+ * explicitly. nRF52 code that reads the SD info struct at MBR_SIZE is wrong
+ * here: on nRF54L that address is application code.
+ *   nRF54L05: 0x058C00   nRF54L10: 0x0D8C00
+ *   nRF54L15: 0x158C00   nRF54LM20A: 0x1DA800
+ * Consumed by utilities.c (SD_ID_GET / SD_VERSION_GET). */
+
 SECTIONS
 {
     .text :
