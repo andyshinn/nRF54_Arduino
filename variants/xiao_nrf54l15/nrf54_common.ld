@@ -30,7 +30,7 @@ PROVIDE(__bootloader_addr     = __flash_arduino_end + 0x2000);
  * the application's .bss, which is above ORIGIN(RAM). See the comment at the
  * clearing loop in startup_nrf54*.S for why that matters. */
 PROVIDE(__softdevice_ram_start = 0x20000000);
-PROVIDE(__softdevice_ram_end   = ORIGIN(RAM) - 8);
+PROVIDE(__softdevice_ram_end   = ORIGIN(NOINIT) - 4);
 
 /* __bootloader_peer_data: 0x40 bytes reserved at the very bottom of the
  * application's RAM, before .data, holding the bond information handed to the
@@ -117,6 +117,20 @@ SECTIONS
 
     ASSERT(__bootloader_peer_data == ORIGIN(RAM),
            "bond handoff window must start at ORIGIN(RAM)")
+
+    /* Pin the bound the SoftDevice RAM clear in Reset_Handler stops at.
+     *
+     * Two words below the application's RAM exist precisely to carry state
+     * across a reset and must survive the clear: ORIGIN(NOINIT) is the
+     * app/bootloader SVC data word, and the word below it is the bootloader's
+     * double-reset detector (ORIGIN(DBL_RESET) in nRF54_Bootloader, which the
+     * framework never places anything in but must not tread on either). Clear
+     * one word too far and single-tap and double-tap DFU recovery stop
+     * working -- silently, and only for the person who needs them. */
+    ASSERT(__softdevice_ram_end == ORIGIN(NOINIT) - 4,
+           "SoftDevice RAM clear must stop one word below NOINIT, at the bootloader's double-reset word")
+    ASSERT(ORIGIN(NOINIT) + 4 == ORIGIN(RAM),
+           "NOINIT must sit in the word directly below the application's RAM")
 
     /* Filesystem data */
     .fs_data :
