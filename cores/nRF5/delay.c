@@ -101,7 +101,8 @@ static bool dwt_cyccnt_usable(void)
  *
  * The fallback stays the nrfx loop. It runs long rather than short, which is
  * the safe direction for a delay, and it is only reached on a part where the
- * cycle counter is unusable.
+ * cycle counter is unusable. Its loop-cycles constant is deliberately not
+ * retuned to match this part; nrfx_glue.h says why.
  */
 void nrf54_delay_us(uint32_t us)
 {

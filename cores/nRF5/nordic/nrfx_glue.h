@@ -162,6 +162,20 @@ static inline bool _NRFX_IRQ_IS_PENDING(IRQn_Type irq_number)
  * the same DWT loop but with no fallback, and ARMv8-M makes
  * DWT_CTRL.CYCCNTENA RAZ/WI when non-invasive debug is not permitted -- the
  * counter then never advances and the wait never ends.
+ *
+ * NRFX_COREDEP_DELAY_US_LOOP_CYCLES is likewise left at the nrfx default of 3
+ * rather than corrected to the eight the loop really costs, which leaves the
+ * fallback running ~2.7x long. That is worth it: the fallback is only reached
+ * where the cycle counter is dead, long is the safe direction for a delay, and
+ * a figure measured on an nRF54LM20A would be imposed on the nRF54L15 this
+ * core also builds for, which does not run at the same clock.
+ *
+ * Routing NRFX_DELAY_US() does not catch every nrfx delay. nrfy_grtc_prepare()
+ * calls nrfx_coredep_delay_us(93) directly -- upstream avoids the macro there
+ * because under Zephyr it would need a system timer that has not started yet
+ * -- and nrfx_cracen.c does the same twice for 1 us, though both of those sit
+ * inside NRFX_CRACEN_BSIM_SUPPORT and are not built here. So one uncorrected
+ * wait runs during GRTC init, overshooting by the factor above.
  */
 #include <lib/nrfx_coredep.h>
 
