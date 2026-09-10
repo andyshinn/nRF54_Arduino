@@ -84,11 +84,31 @@ extern "C" {
 /* ---- IRQ name remapping ---- */
 
 /* GPIOTE */
-#ifndef GPIOTE_IRQn
-#define GPIOTE_IRQn         GPIOTE20_0_IRQn
-#endif
-#ifndef GPIOTE_IRQHandler
-#define GPIOTE_IRQHandler   GPIOTE20_0_IRQHandler
+/*
+ * GPIOTE has two IRQ lines on nRF54L, and a channel's INTENSET lands in the
+ * group named by GPIOTE_IRQ_GROUP (nrf54lXX_interim.h): 0 for NRF_FLPR or a
+ * non-secure application build, 1 for a secure application build. The NVIC line
+ * and the vector-table handler have to match, otherwise the HAL enables the
+ * interrupt in one group while the NVIC listens on the other -- INTPEND stays
+ * latched and the ISR never runs.
+ *
+ * This header is force-included ahead of nrf.h, so GPIOTE_IRQ_GROUP is not
+ * visible yet; mirror its condition using the command-line macros instead.
+ */
+#if defined(NRF_APPLICATION) && !defined(NRF_TRUSTZONE_NONSECURE) && !defined(NRF_FLPR)
+  #ifndef GPIOTE_IRQn
+  #define GPIOTE_IRQn         GPIOTE20_1_IRQn
+  #endif
+  #ifndef GPIOTE_IRQHandler
+  #define GPIOTE_IRQHandler   GPIOTE20_1_IRQHandler
+  #endif
+#else
+  #ifndef GPIOTE_IRQn
+  #define GPIOTE_IRQn         GPIOTE20_0_IRQn
+  #endif
+  #ifndef GPIOTE_IRQHandler
+  #define GPIOTE_IRQHandler   GPIOTE20_0_IRQHandler
+  #endif
 #endif
 
 /* UART */

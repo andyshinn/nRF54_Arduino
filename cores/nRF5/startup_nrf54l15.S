@@ -411,10 +411,17 @@ GRTC_2_IRQHandler:
     b .
     .size GRTC_2_IRQHandler, .-GRTC_2_IRQHandler
 
-    /* GPIOTE20_0_IRQHandler is provided by WInterrupts.c (via the
-     * GPIOTE_IRQHandler alias in nrf54l_compat.h). GPIOTE20_1 is the
-     * second IRQ line of the same controller; attachInterrupt() doesn't
-     * route through it today, but the vector slot still has to resolve. */
+    /* GPIOTE20 has two IRQ lines, and which one attachInterrupt() uses depends
+     * on GPIOTE_IRQ_GROUP (see nrf54l_compat.h): line 0 for a non-secure build,
+     * line 1 for a secure one. WInterrupts.c defines whichever one is in use via
+     * the GPIOTE_IRQHandler alias, so both vector slots need a weak default here
+     * for the other one to resolve. */
+    .weak GPIOTE20_0_IRQHandler
+    .type GPIOTE20_0_IRQHandler, %function
+GPIOTE20_0_IRQHandler:
+    b .
+    .size GPIOTE20_0_IRQHandler, .-GPIOTE20_0_IRQHandler
+
     .weak GPIOTE20_1_IRQHandler
     .type GPIOTE20_1_IRQHandler, %function
 GPIOTE20_1_IRQHandler:
