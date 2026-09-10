@@ -146,19 +146,34 @@ static inline bool _NRFX_IRQ_IS_PENDING(IRQn_Type irq_number)
 // Delay
 // ---------------------------------------------------------------------------
 
-/**
- * @brief When set to a non-zero value, this macro specifies that
- *        @ref nrfx_coredep_delay_us uses a precise DWT-based solution.
+/*
+ * nrfx_coredep_delay_us() spins on a SUBS/BHI pair and converts microseconds to
+ * iterations assuming NRFX_COREDEP_DELAY_US_LOOP_CYCLES (3) cycles per
+ * iteration. Executed from nRF54L's RRAM that loop costs closer to eight
+ * cycles, so the delay it produces is more than twice what was asked for.
+ *
+ * nrf54_delay_us() (cores/nRF5/delay.c) counts real cycles with the DWT cycle
+ * counter instead, which cannot be wrong about how long an instruction took,
+ * and falls back to the loop when the cycle counter is unavailable. Route the
+ * whole of nrfx through it, so a driver's NRFX_DELAY_US() and the sketch's
+ * delayMicroseconds() agree.
+ *
+ * NRFX_COREDEP_DELAY_DWT_BASED is deliberately left off: it would give nrfx
+ * the same DWT loop but with no fallback, and ARMv8-M makes
+ * DWT_CTRL.CYCCNTENA RAZ/WI when non-invasive debug is not permitted -- the
+ * counter then never advances and the wait never ends.
  */
-#define NRFX_DELAY_DWT_BASED  0
+#include <lib/nrfx_coredep.h>
+
+#include <stdint.h>
+void nrf54_delay_us(uint32_t us);
 
 /**
  * @brief Macro for delaying the code execution for at least the specified time.
  *
  * @param us_time Number of microseconds to wait.
  */
-#include <lib/nrfx_coredep.h>
-#define NRFX_DELAY_US(us_time)  nrfx_coredep_delay_us(us_time)
+#define NRFX_DELAY_US(us_time)  nrf54_delay_us(us_time)
 
 // ---------------------------------------------------------------------------
 // Error codes
