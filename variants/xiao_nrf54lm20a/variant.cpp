@@ -65,8 +65,8 @@ const uint32_t g_ADigitalPinMap[] =
   44,   // 32 = POWER_EN = P1.12
   45,   // 33 = PDM_CLK = P1.13
   46,   // 34 = PDM_DIN = P1.14
-  47,   // 35 = PMIC_SDA = P1.15
-  48,   // 36 = PMIC_SCL = P1.16
+  50,   // 35 = PMIC_SDA = P1.18
+  49,   // 36 = PMIC_SCL = P1.17
   8,    // 37 = IMU_SDA = P0.08
   7,    // 38 = IMU_SCL = P0.07
   43,   // 39 = SERIAL2_TX (console) = P1.11
