@@ -167,15 +167,21 @@ static inline bool _NRFX_IRQ_IS_PENDING(IRQn_Type irq_number)
  * rather than corrected to the eight the loop really costs, which leaves the
  * fallback running ~2.7x long. That is worth it: the fallback is only reached
  * where the cycle counter is dead, long is the safe direction for a delay, and
- * a figure measured on an nRF54LM20A would be imposed on the nRF54L15 this
- * core also builds for, which does not run at the same clock.
+ * the eight is an instruction-fetch cost measured on an nRF54LM20A. The loop
+ * already scales itself by SystemCoreClock, so the constant is not about clock
+ * rate -- it is about how fast the part feeds the core from RRAM, and nobody
+ * has measured that on the nRF54L15 this core also builds for.
  *
  * Routing NRFX_DELAY_US() does not catch every nrfx delay. nrfy_grtc_prepare()
  * calls nrfx_coredep_delay_us(93) directly -- upstream avoids the macro there
  * because under Zephyr it would need a system timer that has not started yet
- * -- and nrfx_cracen.c does the same twice for 1 us, though both of those sit
- * inside NRFX_CRACEN_BSIM_SUPPORT and are not built here. So one uncorrected
- * wait runs during GRTC init, overshooting by the factor above.
+ * -- and nrfx_cracen.c does the same twice for 1 us. None of the three are
+ * built in this configuration: the cracen pair sit inside
+ * NRFX_CRACEN_BSIM_SUPPORT, which is defined nowhere, and the GRTC call is
+ * reachable only from nrfx_grtc.c, whose every line is inside
+ * #if NRFX_CHECK(NRFX_GRTC_ENABLED) -- and nrfx_config.h sets that to 0. The
+ * uncorrected constant costs nothing as configured; it would start to matter
+ * if either driver were ever enabled.
  */
 #include <lib/nrfx_coredep.h>
 
