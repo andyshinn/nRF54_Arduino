@@ -134,7 +134,7 @@ static const uint8_t SCK  = PIN_SPI_SCK;
  * TWIM22 is the XIAO I2C controller on this board (D4/D5). Same dedicated-TWI
  * reasoning as the XIAO nRF54L15 variant.
  */
-#define WIRE_INTERFACES_COUNT 1
+#define WIRE_INTERFACES_COUNT 2
 
 #define PIN_WIRE_SDA         (4)   // D4 = P1.03
 #define PIN_WIRE_SCL         (5)   // D5 = P1.07
@@ -145,13 +145,30 @@ static const uint8_t SCK  = PIN_SPI_SCK;
 #define WIRE_IRQ_HANDLER     SERIAL22_IRQHandler
 
 /*
+ * Wire1 is the private bus to the on-board nPM1300 PMIC (P1.18/P1.17). It is
+ * not brought out to the header, so nothing else can appear on it.
+ *
+ * TWIM24 is the only SERIAL2x instance this board leaves free -- SERIAL20 is
+ * the console UART, 21 is Serial1, 22 is Wire and 23 is SPI. It has to be a
+ * SERIAL2x: SERIAL00 reaches only P2 and SERIAL30 only P0, while the PMIC
+ * pins are on P1.
+ */
+#define PIN_WIRE1_SDA        PIN_PMIC_SDA
+#define PIN_WIRE1_SCL        PIN_PMIC_SCL
+
+#define WIRE1_TWIM           NRF_TWIM24
+#define WIRE1_TWIS           NRF_TWIS24
+#define WIRE1_IRQN           SERIAL24_IRQn
+#define WIRE1_IRQ_HANDLER    SERIAL24_IRQHandler
+
+/*
  * Board control pins
  */
 #define PIN_POWER_EN         (32)  // P1.12 — board power enable (regulator-boot-on)
 #define PIN_PDM_CLK          (33)  // P1.13 — on-board DMIC clock
 #define PIN_PDM_DIN          (34)  // P1.14 — on-board DMIC data
-#define PIN_PMIC_SDA         (35)  // P1.15 — nPM1300 PMIC, bit-banged I2C
-#define PIN_PMIC_SCL         (36)  // P1.16 — nPM1300 PMIC, bit-banged I2C
+#define PIN_PMIC_SDA         (35)  // P1.18 — nPM1300 PMIC (Wire1 / TWIM24)
+#define PIN_PMIC_SCL         (36)  // P1.17 — nPM1300 PMIC (Wire1 / TWIM24)
 #define PIN_IMU_SDA          (37)  // P0.08 — LSM6DS3TR-C on TWIM30
 #define PIN_IMU_SCL          (38)  // P0.07 — LSM6DS3TR-C on TWIM30
 
