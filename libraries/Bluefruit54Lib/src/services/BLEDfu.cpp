@@ -155,32 +155,12 @@ static void bledfu_control_wr_authorize_cb(uint16_t conn_hdl, BLECharacteristic*
       Bluefruit.Advertising.restartOnDisconnect(false);
       conn->disconnect();
 
-      // Set GPReset to DFU OTA
-      enum { DFU_OTA_MAGIC = 0xB1 };
+      // Bootloader starts its own BLE stack after the reset (DFU_MAGIC_OTA_RESET)
+      enum { DFU_OTA_MAGIC = 0xA8 };
 
       sd_power_gpregret_clr(0, 0xFF);
       VERIFY_STATUS( sd_power_gpregret_set(0, DFU_OTA_MAGIC), );
-      VERIFY_STATUS( sd_softdevice_disable(),  );
-
-      // Disable all interrupts (nRF54L has 8 NVIC registers)
-      for (int i = 0; i < 8; i++)
-      {
-        NVIC->ICER[i]=0xFFFFFFFF;
-        NVIC->ICPR[i]=0xFFFFFFFF;
-      }
-
-      // S145 does not provide sd_softdevice_vector_table_base_set.
-      // After sd_softdevice_disable(), the vector table can be set directly via SCB.
-      // On nRF54L, the bootloader address is stored in UICR OTP or a known fixed address.
-      extern uint32_t const __bootloader_addr; // defined in linker or variant
-      uint32_t bl_addr = (uint32_t)&__bootloader_addr;
-      // If linker symbol not available, use the MBR's bootloader address pointer
-      if (bl_addr == 0) bl_addr = *((uint32_t*)0x00000FF8);
-
-      SCB->VTOR = bl_addr;
-
-      __set_CONTROL(0); // switch to MSP, required if using FreeRTOS
-      bootloader_util_app_start(bl_addr);
+      NVIC_SystemReset();
     }
   }
 }

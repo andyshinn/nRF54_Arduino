@@ -32,16 +32,10 @@
 #include "nrfx_rramc.h"
 
 
-// nRF54L: RRAM region. Bootloader address is chip-dependent and provided by
-// the linker script as __bootloader_addr (see nrf54_common.ld):
-//   nRF54L05: 0x50000   nRF54L10: 0xD0000   nRF54L15: 0x150000
-extern uint32_t __bootloader_addr[];
-#define BOOTLOADER_ADDR        ((uint32_t)__bootloader_addr)
-
-// InternalFS region, also provided by the linker script (28 KB just below
-// the bootloader). All flash writes must stay inside [start, bootloader).
+// InternalFS region from the linker script; all flash writes must stay inside it.
 extern uint32_t __flash_arduino_start[];
-//extern uint32_t __flash_arduino_end[];
+extern uint32_t __flash_arduino_end[];
+#define BOOTLOADER_ADDR        ((uint32_t)__flash_arduino_end)
 
 //--------------------------------------------------------------------+
 // MACRO TYPEDEF CONSTANT ENUM DECLARATION

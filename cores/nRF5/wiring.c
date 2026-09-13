@@ -42,6 +42,10 @@ void init( void )
   // Retrieve bootloader version
   bootloaderVersion = BOOTLOADER_VERSION_REGISTER;
 
+  // The bootloader may have left the LF clock running on another source
+  NRF_CLOCK->TASKS_LFCLKSTOP = 1;
+  while (NRF_CLOCK->LFCLK.STAT & CLOCK_LFCLK_STAT_STATE_Msk) {}
+
   // Select Clock Source : XTAL or RC (nRF54L uses LFCLK.SRC register)
 #if defined( USE_LFXO )
   NRF_CLOCK->LFCLK.SRC = (CLOCK_LFCLK_SRC_SRC_LFXO << CLOCK_LFCLK_SRC_SRC_Pos) & CLOCK_LFCLK_SRC_SRC_Msk;

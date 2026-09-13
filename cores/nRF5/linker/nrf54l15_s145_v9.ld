@@ -7,10 +7,10 @@ MEMORY
 {
   /* App FLASH ends at 0x147000, last 28 KB reserved for InternalFS (see __flash_arduino_start). */
   FLASH (rx) : ORIGIN = 0x00008000, LENGTH = 0x13F000
-  RAM (rwx) :  ORIGIN = 0x20004800, LENGTH = 0x3B800
+  RAM (rwx) :  ORIGIN = 0x20004800, LENGTH = 0x3B780
 
-  /* SVC data (bond info exchange between app and bootloader) */
-  NOINIT (rwx) :  ORIGIN = 0x200047FC, LENGTH = 0x04
+  /* Bootloader peer data and double-reset marker, must stay untouched by the app */
+  NOINIT (rwx) :  ORIGIN = 0x2003FF80, LENGTH = 0x78
 }
 
 __softdevice_start__ = 0x00158C00;
