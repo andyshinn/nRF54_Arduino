@@ -71,8 +71,9 @@ void TwoWire::begin(void) {
                NRF_GPIO_PIN_NOSENSE);
 
   nrf_twim_frequency_set(_p_twim, NRF_TWIM_FREQ_100K);
-  nrf_twim_enable(_p_twim);
+  // nRF54L ignores PSEL writes while the peripheral is enabled
   nrf_twim_pins_set(_p_twim, _uc_pinSCL, _uc_pinSDA);
+  nrf_twim_enable(_p_twim);
 
   NVIC_ClearPendingIRQ(_IRQn);
   NVIC_SetPriority(_IRQn, 3);
