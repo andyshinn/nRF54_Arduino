@@ -37,33 +37,24 @@ extern "C"
 #endif // __cplusplus
 
 /*
- * nRF54L15 DK Pin Map
+ * nRF54L15 DK Pin Map: Arduino pin = physical GPIO number.
+ *   P0.n = n, P1.n = 32 + n, P2.n = 64 + n
  *
- * Arduino pin 0..31 = P0.00..P0.31 (not all bonded out)
- * Arduino pin 32..63 = P1.00..P1.31
- * Arduino pin 64..95 = P2.00..P2.31
- *
- * The g_ADigitalPinMap[] in variant.cpp maps Arduino pin indices
- * to physical GPIO numbers (port * 32 + pin).
+ * Serial peripherals are bound to a GPIO port on nRF54L:
+ *   SERIAL00 (UARTE00/SPIM00) -> P2, SERIAL2x -> P1, SERIAL30 -> P0.
  */
 
 // Number of pins defined in PinDescription array
-#define PINS_COUNT           (48)
-#define NUM_DIGITAL_PINS     (48)
+#define PINS_COUNT           (96)
+#define NUM_DIGITAL_PINS     (96)
 #define NUM_ANALOG_INPUTS    (8)
 #define NUM_ANALOG_OUTPUTS   (0)
 
-/*
- * LEDs — nRF54L15 DK
- * LED0: P1.10 (active low)
- * LED1: P1.14 (active low)
- * LED2: P1.08 (active low)
- * LED3: P1.13 (active low)
- */
-#define PIN_LED1             (42)  // P1.10 = Arduino pin 32+10
-#define PIN_LED2             (46)  // P1.14 = Arduino pin 32+14
-#define PIN_LED3             (40)  // P1.08 = Arduino pin 32+8
-#define PIN_LED4             (45)  // P1.13 = Arduino pin 32+13
+// LEDs (active low): LED0 P2.09, LED1 P1.10, LED2 P2.07, LED3 P1.14
+#define PIN_LED1             (73)
+#define PIN_LED2             (42)
+#define PIN_LED3             (71)
+#define PIN_LED4             (46)
 
 #define LED_BUILTIN          PIN_LED1
 #define LED_CONN             PIN_LED2
@@ -73,30 +64,21 @@ extern "C"
 
 #define LED_STATE_ON         0         // State when LED is lit (active low)
 
-/*
- * Buttons — nRF54L15 DK
- * Button 0: P1.13
- * Button 1: P1.09
- * Button 2: P1.10  (shared with LED0)
- * Button 3: P1.14  (shared with LED1)
- */
-#define PIN_BUTTON1          (45)  // P1.13
-#define PIN_BUTTON2          (41)  // P1.09
-#define PIN_BUTTON3          (42)  // P1.10
-#define PIN_BUTTON4          (46)  // P1.14
+// Buttons (active low): BTN0 P1.13, BTN1 P1.09, BTN2 P1.08, BTN3 P0.04
+#define PIN_BUTTON1          (45)
+#define PIN_BUTTON2          (41)
+#define PIN_BUTTON3          (40)
+#define PIN_BUTTON4          (4)
 
-/*
- * Analog pins — SAADC inputs
- * nRF54L15 AIN0..AIN7 map to specific GPIO pins
- */
-#define PIN_A0               (1)   // P0.01 / AIN0
-#define PIN_A1               (2)   // P0.02 / AIN1
-#define PIN_A2               (3)   // P0.03 / AIN2
-#define PIN_A3               (4)   // P0.04 / AIN3
-#define PIN_A4               (5)   // P0.05 / AIN4
-#define PIN_A5               (6)   // P0.06 / AIN5
-#define PIN_A6               (7)   // P0.07 / AIN6
-#define PIN_A7               (8)   // P0.08 / AIN7
+// Analog: AIN0..AIN3 = P1.04..P1.07, AIN4..AIN7 = P1.11..P1.14
+#define PIN_A0               (36)
+#define PIN_A1               (37)
+#define PIN_A2               (38)
+#define PIN_A3               (39)
+#define PIN_A4               (43)
+#define PIN_A5               (44)
+#define PIN_A6               (45)
+#define PIN_A7               (46)
 
 static const uint8_t A0  = PIN_A0;
 static const uint8_t A1  = PIN_A1;
@@ -115,35 +97,46 @@ static const uint8_t A7  = PIN_A7;
  * Serial interfaces
  */
 
-// UART0 — connected to J-Link CDC via VCOM
-#define PIN_SERIAL1_RX      (34)  // P1.02
-#define PIN_SERIAL1_TX      (33)  // P1.01
+// Serial1: VCOM0 on the on-board J-Link (UARTE20): TX P1.04, RX P1.05
+#define PIN_SERIAL1_RX      (37)
+#define PIN_SERIAL1_TX      (36)
+#define SERIAL1_UARTE       NRF_UARTE20
+#define SERIAL1_IRQN        SERIAL20_IRQn
+#define SERIAL1_IRQ_HANDLER SERIAL20_IRQHandler
 
-// UART1 — Arduino header pins (optional)
-#define PIN_SERIAL2_RX      (36)  // P1.04
-#define PIN_SERIAL2_TX      (35)  // P1.05
+// Serial2: VCOM1 on the on-board J-Link (UARTE30): TX P0.00, RX P0.01
+#define PIN_SERIAL2_RX      (1)
+#define PIN_SERIAL2_TX      (0)
+#define SERIAL2_UARTE       NRF_UARTE30
+#define SERIAL2_IRQN        SERIAL30_IRQn
+#define SERIAL2_IRQ_HANDLER SERIAL30_IRQHandler
 
 /*
- * SPI Interfaces
+ * SPI Interfaces (SPIM00, shared by the on-board MX25R64 and the Arduino header)
  */
 #define SPI_INTERFACES_COUNT 1
 
-#define PIN_SPI_MISO         (10)  // P0.10
-#define PIN_SPI_MOSI         (9)   // P0.09
-#define PIN_SPI_SCK          (11)  // P0.11
+#define PIN_SPI_MISO         (68)  // P2.04
+#define PIN_SPI_MOSI         (66)  // P2.02
+#define PIN_SPI_SCK          (65)  // P2.01
 
-static const uint8_t SS   = 12;    // P0.12
+static const uint8_t SS   = 69;    // P2.05 (MX25R64 CS)
 static const uint8_t MOSI = PIN_SPI_MOSI;
 static const uint8_t MISO = PIN_SPI_MISO;
 static const uint8_t SCK  = PIN_SPI_SCK;
 
 /*
- * Wire Interfaces
+ * Wire Interfaces (TWIM22 on the Arduino header)
  */
 #define WIRE_INTERFACES_COUNT 1
 
-#define PIN_WIRE_SDA         (37)  // P1.05  (or adjust per DK routing)
-#define PIN_WIRE_SCL         (38)  // P1.06
+#define PIN_WIRE_SDA         (43)  // P1.11
+#define PIN_WIRE_SCL         (44)  // P1.12
+
+#define WIRE_TWIM            NRF_TWIM22
+#define WIRE_TWIS            NRF_TWIS22
+#define WIRE_IRQN            SERIAL22_IRQn
+#define WIRE_IRQ_HANDLER     SERIAL22_IRQHandler
 
 #ifdef __cplusplus
 }

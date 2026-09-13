@@ -259,11 +259,19 @@ int Uart::availableForWrite(void) {
 }
 
 //------------- Serial1 (UART, nRF54L has no USB CDC) -------------//
-Uart Serial1( NRF_UARTE00, SERIAL00_IRQn, PIN_SERIAL1_RX, PIN_SERIAL1_TX );
+// UARTE pin domains are fixed on nRF54L: UARTE00 -> P2, UARTE2x -> P1, UARTE30 -> P0.
+// Variants pick the instance matching their pins via SERIALn_UARTE / SERIALn_IRQN / SERIALn_IRQ_HANDLER.
+#ifndef SERIAL1_UARTE
+#define SERIAL1_UARTE        NRF_UARTE00
+#define SERIAL1_IRQN         SERIAL00_IRQn
+#define SERIAL1_IRQ_HANDLER  SERIAL00_IRQHandler
+#endif
+
+Uart Serial1( SERIAL1_UARTE, SERIAL1_IRQN, PIN_SERIAL1_RX, PIN_SERIAL1_TX );
 
 extern "C"
 {
-  void SERIAL00_IRQHandler()
+  void SERIAL1_IRQ_HANDLER()
   {
     Serial1.IrqHandler();
   }
@@ -271,11 +279,17 @@ extern "C"
 
 //------------- Serial2 -------------//
 #if defined(PIN_SERIAL2_RX) && defined(PIN_SERIAL2_TX)
-Uart Serial2( NRF_UARTE20, SERIAL20_IRQn, PIN_SERIAL2_RX, PIN_SERIAL2_TX );
+#ifndef SERIAL2_UARTE
+#define SERIAL2_UARTE        NRF_UARTE20
+#define SERIAL2_IRQN         SERIAL20_IRQn
+#define SERIAL2_IRQ_HANDLER  SERIAL20_IRQHandler
+#endif
+
+Uart Serial2( SERIAL2_UARTE, SERIAL2_IRQN, PIN_SERIAL2_RX, PIN_SERIAL2_TX );
 
 extern "C"
 {
-  void SERIAL20_IRQHandler()
+  void SERIAL2_IRQ_HANDLER()
   {
     Serial2.IrqHandler();
   }

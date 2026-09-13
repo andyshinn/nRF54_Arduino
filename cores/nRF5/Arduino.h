@@ -129,13 +129,15 @@ void resumeLoop(void);
 
 #define bit(b) (1UL << (b))
 
-#ifdef NRF_P1
+#if defined(NRF_P2)
+  #define digitalPinToPort(P)        ( (g_ADigitalPinMap[P] < 32) ? NRF_P0 : (g_ADigitalPinMap[P] < 64) ? NRF_P1 : NRF_P2 )
+#elif defined(NRF_P1)
   #define digitalPinToPort(P)        ( (g_ADigitalPinMap[P] < 32) ? NRF_P0 : NRF_P1 )
 #else
   #define digitalPinToPort(P)        ( NRF_P0 )
 #endif
 
-#define digitalPinToBitMask(P)     ( 1UL << ( g_ADigitalPinMap[P] < 32 ? g_ADigitalPinMap[P] : (g_ADigitalPinMap[P]-32) ) )
+#define digitalPinToBitMask(P)     ( 1UL << ( g_ADigitalPinMap[P] & 31 ) )
 
 #define digitalPinToPinName(P)     g_ADigitalPinMap[P]
 

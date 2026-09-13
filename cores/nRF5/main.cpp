@@ -39,8 +39,12 @@ void Bluefruit_printInfo() {}
 void initVariant() __attribute__((weak));
 void initVariant() { }
 
+#ifndef LOOP_STACK_SZ
 #define LOOP_STACK_SZ       (256*4)
+#endif
+#ifndef CALLBACK_STACK_SZ
 #define CALLBACK_STACK_SZ   (256*3)
+#endif
 
 static TaskHandle_t  _loopHandle;
 
