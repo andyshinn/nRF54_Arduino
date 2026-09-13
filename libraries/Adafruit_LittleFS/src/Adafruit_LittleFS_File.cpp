@@ -24,6 +24,7 @@
 
 #include <Arduino.h>
 #include "Adafruit_LittleFS.h"
+#include "InternalFileSystem.h"
 #include "littlefs/lfs.h"
 
 //--------------------------------------------------------------------+
@@ -418,3 +419,6 @@ void File::rewindDirectory (void)
   _fs->_unlockFS();
 }
 
+File::File() : File(InternalFS)
+{
+}

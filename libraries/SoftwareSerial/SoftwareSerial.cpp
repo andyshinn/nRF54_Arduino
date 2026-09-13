@@ -22,6 +22,7 @@
 #include <SoftwareSerial.h>
 #include <variant.h>
 #include <WInterrupts.h>
+#include "nrf_gpiote.h"
 
 SoftwareSerial *SoftwareSerial::active_object = 0;
 char SoftwareSerial::_receive_buffer[_SS_MAX_RX_BUFF]; 
@@ -156,7 +157,7 @@ size_t SoftwareSerial::write(uint8_t b)
   if (inv)
     b = ~b;
   // turn off interrupts for a clean txmit
-   NRF_GPIOTE->INTENCLR = _intMask;
+   nrf_gpiote_int_disable(NRF_GPIOTE, _intMask);
   // Write the start bit
   if (inv)
     *reg |= reg_mask;
@@ -184,7 +185,7 @@ size_t SoftwareSerial::write(uint8_t b)
   else
     *reg |= reg_mask;
   
-  NRF_GPIOTE->INTENSET = _intMask;
+  nrf_gpiote_int_enable(NRF_GPIOTE, _intMask);
   
   delayMicroseconds(delay);  
   
@@ -196,11 +197,11 @@ void SoftwareSerial::flush()
   if (!isListening())
     return;
 
-  NRF_GPIOTE->INTENCLR = _intMask;
+  nrf_gpiote_int_disable(NRF_GPIOTE, _intMask);
   
   _receive_buffer_head = _receive_buffer_tail = 0;
 
-  NRF_GPIOTE->INTENSET = _intMask;
+  nrf_gpiote_int_enable(NRF_GPIOTE, _intMask);
 }
 
 int SoftwareSerial::peek()
@@ -228,7 +229,7 @@ void SoftwareSerial::recv()
   if (_inverse_logic ? rx_pin_read() : !rx_pin_read())
   {
 
-    NRF_GPIOTE->INTENCLR = _intMask;
+    nrf_gpiote_int_disable(NRF_GPIOTE, _intMask);
  
     // Wait approximately 1/2 of a bit width to "center" the sample
        delayMicroseconds(_rx_delay_centering);
@@ -286,7 +287,7 @@ void SoftwareSerial::recv()
     // skip the stop bit
    delayMicroseconds(_rx_delay_stopbit); 
 
-   NRF_GPIOTE->INTENSET = _intMask;  
+   nrf_gpiote_int_enable(NRF_GPIOTE, _intMask);  
   }
 }
 

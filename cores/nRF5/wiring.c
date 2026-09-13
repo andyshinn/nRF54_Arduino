@@ -135,17 +135,8 @@ void systemOff(uint32_t pin, uint8_t wake_logic)
     nrf_gpio_cfg_sense_input(pin, NRF_GPIO_PIN_PULLUP, NRF_GPIO_PIN_SENSE_LOW);
   }
 
-  uint8_t sd_en;
-  (void) sd_softdevice_is_enabled(&sd_en);
-
-  // Enter System OFF state
-  if ( sd_en )
-  {
-    sd_power_system_off();
-  }else
-  {
-    NRF_REGULATORS->SYSTEMOFF = REGULATORS_SYSTEMOFF_SYSTEMOFF_Enter;
-  }
+  // s145 has no sd_power_system_off(); REGULATORS is not SoftDevice-restricted
+  NRF_REGULATORS->SYSTEMOFF = REGULATORS_SYSTEMOFF_SYSTEMOFF_Enter;
 }
 
 

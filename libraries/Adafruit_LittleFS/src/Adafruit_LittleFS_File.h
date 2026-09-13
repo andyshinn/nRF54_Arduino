@@ -43,6 +43,7 @@ class File : public Stream
   public:
     File (Adafruit_LittleFS &fs);
     File (char const *filename, uint8_t mode, Adafruit_LittleFS &fs);
+    File (); // binds to InternalFS, matches the ESP32/RP2040 File API
 
   public:
 
