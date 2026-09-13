@@ -35,6 +35,10 @@
 /**************************************************************************/
 
 #include <stdint.h>
+
+extern "C" uint32_t verify_last_err, verify_last_line;
+uint32_t verify_last_err = 0;
+uint32_t verify_last_line = 0;
 #include <stdarg.h>
 #include <malloc.h>
 #include <Arduino.h>
@@ -302,7 +306,9 @@ static lookup_entry_t const _strevt_lookup[] =
     { .key = BLE_GAP_EVT_PHY_UPDATE                  , .data= "BLE_GAP_EVT_PHY_UPDATE"                  },
     { .key = BLE_GAP_EVT_DATA_LENGTH_UPDATE_REQUEST  , .data= "BLE_GAP_EVT_DATA_LENGTH_UPDATE_REQUEST"  },
     { .key = BLE_GAP_EVT_DATA_LENGTH_UPDATE          , .data= "BLE_GAP_EVT_DATA_LENGTH_UPDATE"          },
+#ifdef BLE_GAP_EVT_QOS_CHANNEL_SURVEY_REPORT
     { .key = BLE_GAP_EVT_QOS_CHANNEL_SURVEY_REPORT   , .data= "BLE_GAP_EVT_QOS_CHANNEL_SURVEY_REPORT"   },
+#endif
     { .key = BLE_GAP_EVT_ADV_SET_TERMINATED          , .data= "BLE_GAP_EVT_ADV_SET_TERMINATED"          },
 
     // BLE Gattc: 0x30

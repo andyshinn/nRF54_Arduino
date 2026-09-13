@@ -74,8 +74,16 @@ extern "C"
 #endif
 
 
+// Last non-zero status seen by VERIFY_STATUS (diagnostics without CFG_DEBUG).
+#ifdef __cplusplus
+extern "C" uint32_t verify_last_err, verify_last_line;
+#else
+extern uint32_t verify_last_err, verify_last_line;
+#endif
+
 #define VERIFY_ERR_DEF(_status, _ret, _funcstr) \
     if ( 0 != _status ) {                       \
+      verify_last_err = _status; verify_last_line = __LINE__;                \
       VERIFY_MESS(_status, _funcstr);           \
       return _ret;                              \
     }

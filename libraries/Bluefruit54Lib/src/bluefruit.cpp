@@ -36,6 +36,10 @@
 
 #include "bluefruit.h"
 #include "sd_isr.h"
+#include "nRF54Crypto.h"
+
+// Application RAM base the SoftDevice asked for in the last sd_ble_enable(); for linker RAM ORIGIN tuning.
+uint32_t sd_app_ram_start_required = 0;
 #include "utility/bonding.h"
 
 #ifndef CFG_BLE_TX_POWER_LEVEL
@@ -260,7 +264,7 @@ bool AdafruitBluefruit::begin(uint8_t prph_count, uint8_t central_count)
     .rc_temp_ctiv  = 0,
     .accuracy      = NRF_CLOCK_LF_ACCURACY_20_PPM,
     .hfclk_latency = 1500,
-    .hfint_ctiv    = 0
+    .hfint_ctiv    = 60 // 1..255 regardless of the LF source, 0 is NRF_ERROR_INVALID_PARAM on s145
   };
 #elif defined( USE_LFRC )
   nrf_clock_lf_cfg_t clock_cfg =
@@ -283,6 +287,16 @@ bool AdafruitBluefruit::begin(uint8_t prph_count, uint8_t central_count)
   uint32_t sd_err = sd_softdevice_enable(&clock_cfg, nrf_error_cb);
   if ( sd_err != NRF_SUCCESS ) sd_isr_forwarding_disable();
   VERIFY_STATUS( sd_err, false );
+
+  // s145 asks for a seed (NRF_EVT_RAND_SEED_REQUEST) and sd_ble_enable() fails with INVALID_STATE without one
+  {
+    uint8_t seed[SD_RAND_SEED_SIZE];
+    nRF54Crypto.begin();
+    bool seeded = nRF54Crypto.random(seed, sizeof(seed));
+    nRF54Crypto.end();
+    VERIFY(seeded, false);
+    VERIFY_STATUS( sd_rand_seed_set(seed), false );
+  }
 
   /*------------------------------------------------------------------*/
   /*  SoftDevice Default Configuration depending on the number of
@@ -317,6 +331,7 @@ bool AdafruitBluefruit::begin(uint8_t prph_count, uint8_t central_count)
 
   // Roles
   varclr(&blecfg);
+  blecfg.gap_cfg.role_count_cfg.adv_set_count      = BLE_GAP_ADV_SET_COUNT_DEFAULT; // 0 is rejected by s145
   blecfg.gap_cfg.role_count_cfg.periph_role_count  = _prph_count;
   blecfg.gap_cfg.role_count_cfg.central_role_count = _central_count;
   blecfg.gap_cfg.role_count_cfg.central_sec_count  = (_central_count ? 1 : 0); // 1 should be enough
@@ -397,6 +412,7 @@ bool AdafruitBluefruit::begin(uint8_t prph_count, uint8_t central_count)
   // The memory requirement for a specific configuration will not increase
   // between SoftDevices with the same major version number
   uint32_t err = sd_ble_enable(&ram_start);
+  sd_app_ram_start_required = ram_start;
   if ( err )
   {
     LOG_LV1("CFG", "SoftDevice config require more SRAM than provided by linker.\n"

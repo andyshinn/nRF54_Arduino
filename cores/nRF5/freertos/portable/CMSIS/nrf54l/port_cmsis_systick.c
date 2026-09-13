@@ -165,6 +165,8 @@ void vPortSetupTimerInterrupt( void )
         nrfy_grtc_prepare(NRF_GRTC, true);
         nrfy_grtc_sys_counter_start(NRF_GRTC, true);
     }
+    /* The GRTC survives soft resets, so set this outside the start path: sd_softdevice_enable() requires AUTOEN. */
+    nrf_grtc_sys_counter_auto_mode_set(NRF_GRTC, true);
 
     /* Clear any pending event */
     grtc_event_compare_clear(portNRF_GRTC_CC_CH);
