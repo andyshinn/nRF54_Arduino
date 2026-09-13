@@ -53,7 +53,6 @@ extern uint32_t __bss_start__[];
 extern uint32_t __bss_end__[];
 
 extern unsigned char __HeapBase[];
-extern unsigned char __HeapLimit[];
 
 extern uint32_t __StackTop[];
 extern uint32_t __StackLimit[];
@@ -67,9 +66,10 @@ void HardFault_Handler(void)
   NVIC_SystemReset();
 }
 
+// The heap grows up to the stack limit (see _sbrk in new.cpp), __HeapLimit is not used
 int dbgHeapTotal(void)
 {
-  return ((uint32_t) __HeapLimit) - ((uint32_t) __HeapBase);
+  return ((uint32_t) __StackLimit) - ((uint32_t) __HeapBase);
 }
 
 int dbgHeapUsed(void)
@@ -124,7 +124,7 @@ void dbgMemInfo(void)
   printMemRegion("Stack", ((uint32_t) __StackTop), ((uint32_t) __StackLimit), dbgStackUsed() );
 
   // Print Heap usage overall (including memory malloced to tasks)
-  printMemRegion("Heap", ((uint32_t) __HeapLimit), ((uint32_t) __HeapBase), dbgHeapUsed() );
+  printMemRegion("Heap", ((uint32_t) __StackLimit), ((uint32_t) __HeapBase), dbgHeapUsed() );
 
   // DATA + BSS
   printMemRegion("Bss", ((uint32_t) __bss_end__), ((uint32_t) __data_start__), 0);

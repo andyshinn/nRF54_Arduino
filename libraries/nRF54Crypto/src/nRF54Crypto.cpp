@@ -117,6 +117,8 @@ static bool cracen_rng_fill(uint8_t *dest, size_t len)
 
 extern "C" int default_CSPRNG(uint8_t *dest, unsigned int size)
 {
+    // uECC also draws randomness during ECDH, which may run long after end() stopped the RNG
+    if (!_rng_started && !cracen_rng_start()) return 0;
     return cracen_rng_fill(dest, size) ? 1 : 0;
 }
 
