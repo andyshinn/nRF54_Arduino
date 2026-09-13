@@ -28,10 +28,10 @@ extern "C" {
 #include "Wire.h"
 
 // TWIM events never arrive on a stuck or floating bus; bound every wait so scans return instead of hanging.
-static bool twim_wait(NRF_TWIM_Type * twim, nrf_twim_event_t ev)
+static bool twim_wait(NRF_TWIM_Type * twim, nrf_twim_event_t ev, bool abort_on_error = true)
 {
   uint32_t start = micros();
-  while (!nrf_twim_event_check(twim, ev) && !nrf_twim_event_check(twim, NRF_TWIM_EVENT_ERROR))
+  while (!nrf_twim_event_check(twim, ev) && !(abort_on_error && nrf_twim_event_check(twim, NRF_TWIM_EVENT_ERROR)))
   {
     if ((uint32_t)(micros() - start) > 25000)
     {
@@ -165,6 +165,9 @@ uint8_t TwoWire::requestFrom(uint8_t address, size_t quantity, bool stopBit)
   rxBuffer.clear();
 
   nrf_twim_address_set(_p_twim, address);
+  (void) nrf_twim_errorsrc_get_and_clear(_p_twim);
+  nrf_twim_event_clear(_p_twim, NRF_TWIM_EVENT_STOPPED);
+  nrf_twim_event_clear(_p_twim, NRF_TWIM_EVENT_ERROR);
 
   nrf_twim_task_trigger(_p_twim, NRF_TWIM_TASK_RESUME);
   nrf_twim_rx_buffer_set(_p_twim, rxBuffer._aucBuffer, quantity);
@@ -178,8 +181,9 @@ uint8_t TwoWire::requestFrom(uint8_t address, size_t quantity, bool stopBit)
 
   if (stopBit || nrf_twim_event_check(_p_twim, NRF_TWIM_EVENT_ERROR))
   {
+    nrf_twim_event_clear(_p_twim, NRF_TWIM_EVENT_ERROR);
     nrf_twim_task_trigger(_p_twim, NRF_TWIM_TASK_STOP);
-    if (!twim_wait(_p_twim, NRF_TWIM_EVENT_STOPPED)) return 0;
+    if (!twim_wait(_p_twim, NRF_TWIM_EVENT_STOPPED, false)) return 0;
     nrf_twim_event_clear(_p_twim, NRF_TWIM_EVENT_STOPPED);
   }
   else
@@ -222,57 +226,40 @@ uint8_t TwoWire::endTransmission(bool stopBit)
 {
   transmissionBegun = false ;
 
-  // Start I2C transmission
+  size_t len = txBuffer.available();
   nrf_twim_address_set(_p_twim, txAddress);
-
-  // just in case twi is stopped by bus error
+  (void) nrf_twim_errorsrc_get_and_clear(_p_twim);
   nrf_twim_event_clear(_p_twim, NRF_TWIM_EVENT_STOPPED);
+  nrf_twim_event_clear(_p_twim, NRF_TWIM_EVENT_SUSPENDED);
+  nrf_twim_event_clear(_p_twim, NRF_TWIM_EVENT_ERROR);
+  nrf_twim_event_clear(_p_twim, NRF_TWIM_EVENT_LASTTX);
   nrf_twim_task_trigger(_p_twim, NRF_TWIM_TASK_RESUME);
 
-  nrf_twim_tx_buffer_set(_p_twim, txBuffer._aucBuffer, txBuffer.available());
+  // Let the shortcut end the transfer at the last byte; an address-only transfer has no LASTTX and is stopped right away.
+  nrf_twim_shorts_set(_p_twim, len == 0 ? 0 : (stopBit ? NRF_TWIM_SHORT_LASTTX_STOP_MASK : NRF_TWIM_SHORT_LASTTX_SUSPEND_MASK));
+  nrf_twim_tx_buffer_set(_p_twim, txBuffer._aucBuffer, len);
   nrf_twim_task_trigger(_p_twim, NRF_TWIM_TASK_STARTTX);
+  if (len == 0) nrf_twim_task_trigger(_p_twim, NRF_TWIM_TASK_STOP);
 
-  if (!twim_wait(_p_twim, NRF_TWIM_EVENT_TXSTARTED)) return 4;
+  bool done = twim_wait(_p_twim, (stopBit || len == 0) ? NRF_TWIM_EVENT_STOPPED : NRF_TWIM_EVENT_SUSPENDED);
+  nrf_twim_shorts_set(_p_twim, 0);
+  if (nrf_twim_event_check(_p_twim, NRF_TWIM_EVENT_ERROR) && !nrf_twim_event_check(_p_twim, NRF_TWIM_EVENT_STOPPED))
+  {
+    // NACK: the bus is still held, stop it (ERRORSRC keeps the cause)
+    nrf_twim_event_clear(_p_twim, NRF_TWIM_EVENT_ERROR);
+    nrf_twim_task_trigger(_p_twim, NRF_TWIM_TASK_STOP);
+    twim_wait(_p_twim, NRF_TWIM_EVENT_STOPPED, false);
+  }
+  nrf_twim_event_clear(_p_twim, NRF_TWIM_EVENT_STOPPED);
+  nrf_twim_event_clear(_p_twim, NRF_TWIM_EVENT_SUSPENDED);
+  nrf_twim_event_clear(_p_twim, NRF_TWIM_EVENT_ERROR);
+  nrf_twim_event_clear(_p_twim, NRF_TWIM_EVENT_LASTTX);
   nrf_twim_event_clear(_p_twim, NRF_TWIM_EVENT_TXSTARTED);
 
-  if (txBuffer.available()) {
-    if (!twim_wait(_p_twim, NRF_TWIM_EVENT_LASTTX)) return 4;
-  }
-  nrf_twim_event_clear(_p_twim, NRF_TWIM_EVENT_LASTTX);
-
-  if (stopBit || nrf_twim_event_check(_p_twim, NRF_TWIM_EVENT_ERROR))
-  {
-    nrf_twim_task_trigger(_p_twim, NRF_TWIM_TASK_STOP);
-    if (!twim_wait(_p_twim, NRF_TWIM_EVENT_STOPPED)) return 4;
-    nrf_twim_event_clear(_p_twim, NRF_TWIM_EVENT_STOPPED);
-  }
-  else
-  {
-    nrf_twim_task_trigger(_p_twim, NRF_TWIM_TASK_SUSPEND);
-    if (!twim_wait(_p_twim, NRF_TWIM_EVENT_SUSPENDED)) return 4;
-    nrf_twim_event_clear(_p_twim, NRF_TWIM_EVENT_SUSPENDED);
-  }
-
-  if (nrf_twim_event_check(_p_twim, NRF_TWIM_EVENT_ERROR))
-  {
-    nrf_twim_event_clear(_p_twim, NRF_TWIM_EVENT_ERROR);
-
-    uint32_t error = nrf_twim_errorsrc_get_and_clear(_p_twim);
-
-    if (error == NRF_TWIM_ERROR_ADDRESS_NACK)
-    {
-      return 2;
-    }
-    else if (error == NRF_TWIM_ERROR_DATA_NACK)
-    {
-      return 3;
-    }
-    else
-    {
-      return 4;
-    }
-  }
-
+  uint32_t error = nrf_twim_errorsrc_get_and_clear(_p_twim);
+  if (error & NRF_TWIM_ERROR_ADDRESS_NACK) return 2;
+  if (error & NRF_TWIM_ERROR_DATA_NACK) return 3;
+  if (error || !done) return 4;
   return 0;
 }
 

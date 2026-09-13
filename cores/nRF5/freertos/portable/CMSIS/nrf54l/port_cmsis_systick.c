@@ -90,6 +90,9 @@ static inline void grtc_int_compare_disable(uint32_t cc_channel)
 
 /*-----------------------------------------------------------*/
 
+// SYSCOUNTER value at scheduler start; the counter survives resets, so ticks count from here.
+static uint32_t grtc_tick_base;
+
 void xPortSysTickHandler( void )
 {
     traceISR_ENTER();
@@ -108,7 +111,7 @@ void xPortSysTickHandler( void )
          * GRTC runs at configSYSTICK_CLOCK_HZ (1 MHz).
          * Each OS tick = portNRF_GRTC_TICKS_PER_SYSTICK GRTC ticks. */
         TickType_t diff;
-        uint32_t expected_counter = xTaskGetTickCount() * portNRF_GRTC_TICKS_PER_SYSTICK;
+        uint32_t expected_counter = grtc_tick_base + xTaskGetTickCount() * portNRF_GRTC_TICKS_PER_SYSTICK;
         diff = (systick_counter - expected_counter) / portNRF_GRTC_TICKS_PER_SYSTICK;
 
         /* At most 1 step if scheduler is suspended */
@@ -173,6 +176,7 @@ void vPortSetupTimerInterrupt( void )
 
     /* Set first compare value */
     uint32_t now = grtc_counter_get();
+    grtc_tick_base = now;
     grtc_cc_set(portNRF_GRTC_CC_CH, now + portNRF_GRTC_TICKS_PER_SYSTICK);
 
     /* Enable compare interrupt */
