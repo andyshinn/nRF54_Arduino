@@ -27,6 +27,21 @@ extern "C" {
 
 #include "Wire.h"
 
+// TWIM events never arrive on a stuck or floating bus; bound every wait so scans return instead of hanging.
+static bool twim_wait(NRF_TWIM_Type * twim, nrf_twim_event_t ev)
+{
+  uint32_t start = micros();
+  while (!nrf_twim_event_check(twim, ev) && !nrf_twim_event_check(twim, NRF_TWIM_EVENT_ERROR))
+  {
+    if ((uint32_t)(micros() - start) > 25000)
+    {
+      nrf_twim_task_trigger(twim, NRF_TWIM_TASK_STOP);
+      return false;
+    }
+  }
+  return true;
+}
+
 TwoWire::TwoWire(NRF_TWIM_Type * p_twim, NRF_TWIS_Type * p_twis, IRQn_Type IRQn, uint8_t pinSDA, uint8_t pinSCL)
 {
   this->_p_twim = p_twim;
@@ -154,24 +169,22 @@ uint8_t TwoWire::requestFrom(uint8_t address, size_t quantity, bool stopBit)
   nrf_twim_rx_buffer_set(_p_twim, rxBuffer._aucBuffer, quantity);
   nrf_twim_task_trigger(_p_twim, NRF_TWIM_TASK_STARTRX);
 
-  while(!nrf_twim_event_check(_p_twim, NRF_TWIM_EVENT_RXSTARTED) &&
-        !nrf_twim_event_check(_p_twim, NRF_TWIM_EVENT_ERROR));
+  if (!twim_wait(_p_twim, NRF_TWIM_EVENT_RXSTARTED)) return 0;
   nrf_twim_event_clear(_p_twim, NRF_TWIM_EVENT_RXSTARTED);
 
-  while(!nrf_twim_event_check(_p_twim, NRF_TWIM_EVENT_LASTRX) &&
-        !nrf_twim_event_check(_p_twim, NRF_TWIM_EVENT_ERROR));
+  if (!twim_wait(_p_twim, NRF_TWIM_EVENT_LASTRX)) return 0;
   nrf_twim_event_clear(_p_twim, NRF_TWIM_EVENT_LASTRX);
 
   if (stopBit || nrf_twim_event_check(_p_twim, NRF_TWIM_EVENT_ERROR))
   {
     nrf_twim_task_trigger(_p_twim, NRF_TWIM_TASK_STOP);
-    while(!nrf_twim_event_check(_p_twim, NRF_TWIM_EVENT_STOPPED));
+    if (!twim_wait(_p_twim, NRF_TWIM_EVENT_STOPPED)) return 0;
     nrf_twim_event_clear(_p_twim, NRF_TWIM_EVENT_STOPPED);
   }
   else
   {
     nrf_twim_task_trigger(_p_twim, NRF_TWIM_TASK_SUSPEND);
-    while(!nrf_twim_event_check(_p_twim, NRF_TWIM_EVENT_SUSPENDED));
+    if (!twim_wait(_p_twim, NRF_TWIM_EVENT_SUSPENDED)) return 0;
     nrf_twim_event_clear(_p_twim, NRF_TWIM_EVENT_SUSPENDED);
   }
 
@@ -218,26 +231,24 @@ uint8_t TwoWire::endTransmission(bool stopBit)
   nrf_twim_tx_buffer_set(_p_twim, txBuffer._aucBuffer, txBuffer.available());
   nrf_twim_task_trigger(_p_twim, NRF_TWIM_TASK_STARTTX);
 
-  while(!nrf_twim_event_check(_p_twim, NRF_TWIM_EVENT_TXSTARTED) &&
-        !nrf_twim_event_check(_p_twim, NRF_TWIM_EVENT_ERROR));
+  if (!twim_wait(_p_twim, NRF_TWIM_EVENT_TXSTARTED)) return 4;
   nrf_twim_event_clear(_p_twim, NRF_TWIM_EVENT_TXSTARTED);
 
   if (txBuffer.available()) {
-    while(!nrf_twim_event_check(_p_twim, NRF_TWIM_EVENT_LASTTX) &&
-          !nrf_twim_event_check(_p_twim, NRF_TWIM_EVENT_ERROR));
+    if (!twim_wait(_p_twim, NRF_TWIM_EVENT_LASTTX)) return 4;
   }
   nrf_twim_event_clear(_p_twim, NRF_TWIM_EVENT_LASTTX);
 
   if (stopBit || nrf_twim_event_check(_p_twim, NRF_TWIM_EVENT_ERROR))
   {
     nrf_twim_task_trigger(_p_twim, NRF_TWIM_TASK_STOP);
-    while(!nrf_twim_event_check(_p_twim, NRF_TWIM_EVENT_STOPPED));
+    if (!twim_wait(_p_twim, NRF_TWIM_EVENT_STOPPED)) return 4;
     nrf_twim_event_clear(_p_twim, NRF_TWIM_EVENT_STOPPED);
   }
   else
   {
     nrf_twim_task_trigger(_p_twim, NRF_TWIM_TASK_SUSPEND);
-    while(!nrf_twim_event_check(_p_twim, NRF_TWIM_EVENT_SUSPENDED));
+    if (!twim_wait(_p_twim, NRF_TWIM_EVENT_SUSPENDED)) return 4;
     nrf_twim_event_clear(_p_twim, NRF_TWIM_EVENT_SUSPENDED);
   }
 

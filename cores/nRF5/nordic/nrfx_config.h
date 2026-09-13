@@ -195,6 +195,7 @@
 #define NRFX_PWM_ENABLED                            1
 #define NRFX_QDEC_ENABLED                           1
 #define NRFX_RRAMC_ENABLED                          1
+#define NRFX_RRAMC_DEFAULT_CONFIG_IRQ_PRIORITY      7
 #define NRFX_SAADC_ENABLED                          1
 #define NRFX_SPIM_ENABLED                           1
 #define NRFX_SPIS_ENABLED                           1

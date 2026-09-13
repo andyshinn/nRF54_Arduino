@@ -27,6 +27,7 @@
  */
 
 /* Scheduler includes. */
+#include "nrfy_grtc.h"
 #include "FreeRTOS.h"
 #include "task.h"
 #include "nrf_nvic.h"
@@ -154,8 +155,16 @@ void xPortSysTickHandler( void )
  */
 void vPortSetupTimerInterrupt( void )
 {
-    /* GRTC SYSCOUNTER is already running (started by SystemInit or bootloader).
-     * We just need to set up a compare channel for periodic tick interrupts. */
+    /* Nothing before us starts the GRTC (no MBR/bootloader does), so bring the
+     * 1 MHz SYSCOUNTER up here; the SoftDevice uses the same counter later. */
+    if (!nrf_grtc_sys_counter_check(NRF_GRTC))
+    {
+#ifdef USE_LFXO
+        nrf_grtc_clksel_set(NRF_GRTC, NRF_GRTC_CLKSEL_LFXO);
+#endif
+        nrfy_grtc_prepare(NRF_GRTC, true);
+        nrfy_grtc_sys_counter_start(NRF_GRTC, true);
+    }
 
     /* Clear any pending event */
     grtc_event_compare_clear(portNRF_GRTC_CC_CH);

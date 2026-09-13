@@ -23,6 +23,10 @@
 #include "wiring_private.h"
 #include "nrf_gpiote.h"
 
+/* The HAL enables interrupts on INTENSET<GPIOTE_IRQ_GROUP>, so the IRQ line and handler must match that group. */
+#define GPIOTE_IRQn        NRFX_CONCAT_3(GPIOTE20_, GPIOTE_IRQ_GROUP, _IRQn)
+#define GPIOTE_IRQHandler  NRFX_CONCAT_3(GPIOTE20_, GPIOTE_IRQ_GROUP, _IRQHandler)
+
 #include <string.h>
 
 /* nRF54L GPIOTE20 has 8 channels */

@@ -1,17 +1,17 @@
-/* nRF54L05 Application linker script with S145 v9.0.0 SoftDevice */
+/* nRF54L05 application with the s145 v9.0.0 SoftDevice.
+ * RRAM 0x0-0x8000 is the bootloader (it owns reset), the SoftDevice sits at the top of RRAM.
+ * The SoftDevice base is derived from the L15 image size and unverified on hardware. */
 SEARCH_DIR(.)
 GROUP(-lgcc -lc -lnosys)
 
 MEMORY
 {
-  /* App FLASH ends at 0x47000, last 28 KB reserved for InternalFS
-   * (LittleFS used by BLE bonding etc., see __flash_arduino_start below).
-   * Bootloader lives at 0x50000, 8 KB gap from 0x4E000-0x4FFFF is unused. */
-  FLASH (rx) : ORIGIN = 0x00001000, LENGTH = 0x46000
-  RAM (rwx) :  ORIGIN = 0x20004800, LENGTH = 0x13800
+  FLASH (rx) : ORIGIN = 0x00008000, LENGTH = 0x3f000
+  RAM (rwx) :  ORIGIN = 0x20004800, LENGTH = 0x3B800
 
-  /* SVC data (bond info exchange between app and bootloader) */
   NOINIT (rwx) :  ORIGIN = 0x200047FC, LENGTH = 0x04
 }
+
+__softdevice_start__ = 0x00058C00;
 
 INCLUDE "nrf54_common.ld"

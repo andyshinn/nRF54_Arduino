@@ -29,6 +29,7 @@
 #include "delay.h"
 #include "rtos.h"
 #include "assert.h"
+#include "nrfx_rramc.h"
 
 
 // nRF54L: RRAM region. Bootloader address is chip-dependent and provided by
@@ -94,6 +95,28 @@ static uint32_t wait_for_async_flash_op_completion(uint32_t initial_result)
   }
 
   return result;
+}
+
+// sd_flash_write() is a SoftDevice SVC; without the SoftDevice the RRAM controller is driven directly.
+static uint32_t rram_write(uint32_t dst, uint32_t const * src, uint32_t n_words)
+{
+  static bool inited = false;
+  if ( !inited ) {
+    nrfx_rramc_config_t cfg = NRFX_RRAMC_DEFAULT_CONFIG(32);
+    cfg.mode_write = true;
+    nrfx_rramc_init(&cfg, NULL);
+    inited = true;
+  }
+  nrfx_rramc_write_enable_set(true, 32);
+  nrfx_rramc_words_write(dst, src, n_words);
+  nrfx_rramc_write_buffer_commit();
+  return NRF_SUCCESS;
+}
+
+static uint32_t flash_words_write(bool sd_en, uint32_t dst, uint32_t const * src, uint32_t n_words)
+{
+  if ( !sd_en ) return rram_write(dst, src, n_words);
+  return wait_for_async_flash_op_completion(sd_flash_write((uint32_t*) dst, src, n_words));
 }
 
 // Flash Abstraction Layer
@@ -178,11 +201,7 @@ static bool fal_erase (uint32_t addr)
     uint32_t err;
 
     for (uint8_t attempt = 0; attempt < MAX_RETRY; ++attempt) {
-      err = sd_flash_write((uint32_t*)dst, ff_buf, wr_bytes / 4);
-
-      if (sd_en) {
-        err = wait_for_async_flash_op_completion(err);
-      }
+      err = flash_words_write(sd_en, dst, ff_buf, wr_bytes / 4);
       if (err == NRF_SUCCESS) {
         break;
       }
@@ -210,11 +229,7 @@ static uint32_t fal_program (uint32_t dst, void const * src, uint32_t len)
   // Write in two halves to avoid potential SoftDevice issues with large writes
   // Write first half
   for (uint8_t attempt = 0; attempt < MAX_RETRY; ++attempt) {
-    err = sd_flash_write((uint32_t*) dst, (uint32_t const *) src, len/8);
-
-    if (sd_en) {
-      err = wait_for_async_flash_op_completion(err);
-    }
+    err = flash_words_write(sd_en, dst, (uint32_t const *) src, len/8);
     if (err == NRF_SUCCESS) {
       break;
     }
@@ -226,11 +241,7 @@ static uint32_t fal_program (uint32_t dst, void const * src, uint32_t len)
 
   // Write second half
   for (uint8_t attempt = 0; attempt < MAX_RETRY; ++attempt) {
-    err = sd_flash_write((uint32_t*) (dst+ len/2), (uint32_t const *) (src + len/2), len/8);
-
-    if (sd_en) {
-      err = wait_for_async_flash_op_completion(err);
-    }
+    err = flash_words_write(sd_en, dst + len/2, (uint32_t const *) (src + len/2), len/8);
     if (err == NRF_SUCCESS) {
       break;
     }

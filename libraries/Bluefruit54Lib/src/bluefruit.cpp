@@ -35,6 +35,7 @@
 /**************************************************************************/
 
 #include "bluefruit.h"
+#include "sd_isr.h"
 #include "utility/bonding.h"
 
 #ifndef CFG_BLE_TX_POWER_LEVEL
@@ -277,7 +278,11 @@ bool AdafruitBluefruit::begin(uint8_t prph_count, uint8_t central_count)
 #endif
 
   // Enable SoftDevice
-  VERIFY_STATUS( sd_softdevice_enable(&clock_cfg, nrf_error_cb), false );
+  extern uint32_t __softdevice_start__;
+  sd_isr_forwarding_enable((uint32_t) &__softdevice_start__);
+  uint32_t sd_err = sd_softdevice_enable(&clock_cfg, nrf_error_cb);
+  if ( sd_err != NRF_SUCCESS ) sd_isr_forwarding_disable();
+  VERIFY_STATUS( sd_err, false );
 
   /*------------------------------------------------------------------*/
   /*  SoftDevice Default Configuration depending on the number of

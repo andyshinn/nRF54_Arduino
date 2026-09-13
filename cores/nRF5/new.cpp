@@ -57,9 +57,9 @@ void operator delete[](void * ptr, unsigned int) {
 extern "C"
 {
 
-// defined in linker script
+// defined in linker script; the heap is everything between .bss and the reserved MSP stack
 extern unsigned char __HeapBase[];
-extern unsigned char __HeapLimit[];
+extern unsigned char __StackLimit[];
 
 static unsigned char *sbrk_heap_top = __HeapBase;
 
@@ -68,7 +68,7 @@ caddr_t _sbrk( int incr )
 {
   unsigned char *prev_heap;
 
-  if ( sbrk_heap_top + incr > __HeapLimit )
+  if ( sbrk_heap_top + incr > __StackLimit )
   {
     /* Out of dynamic memory heap space */
     errno = ENOMEM;

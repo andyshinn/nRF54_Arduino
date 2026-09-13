@@ -78,14 +78,8 @@ typedef unsigned long UBaseType_t;
 /* GRTC configuration for nRF54L FreeRTOS tick */
 #define portNRF_GRTC_REG        NRF_GRTC
 #define portNRF_GRTC_CC_CH      4
-/* GRTC IRQ group depends on security domain (set in nrf54l15_interim.h) */
-#if defined(GRTC_IRQ_GROUP) && (GRTC_IRQ_GROUP == 1)
-#define portNRF_GRTC_IRQn       GRTC_1_IRQn
-#elif defined(GRTC_IRQ_GROUP) && (GRTC_IRQ_GROUP == 0)
+/* IRQ group 0, matching the INTENSET0/INTENCLR0 writes in port_cmsis_systick.c */
 #define portNRF_GRTC_IRQn       GRTC_0_IRQn
-#else
-#define portNRF_GRTC_IRQn       GRTC_2_IRQn
-#endif
 /* GRTC SYSCOUNTER runs at 1 MHz (not LFCLK). configSYSTICK_CLOCK_HZ = 1000000 */
 #define portNRF_GRTC_TICKS_PER_SYSTICK  ( configSYSTICK_CLOCK_HZ / configTICK_RATE_HZ )
 /* 32-bit compare window */

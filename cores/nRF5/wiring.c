@@ -20,6 +20,7 @@
 #include "Arduino.h"
 #include "nrf.h"
 #include "nrf_nvic.h"
+#include "sd_isr.h"
 
 nrf_nvic_state_t nrf_nvic_state;
 
@@ -51,6 +52,8 @@ void init( void )
 #endif
 
   NRF_CLOCK->TASKS_LFCLKSTART = CLOCK_TASKS_LFCLKSTART_TASKS_LFCLKSTART_Trigger;
+
+  sd_isr_boot_init();
 
   // No RTC1 on nRF54L (uses GRTC instead). Bootloader timer already stopped.
 

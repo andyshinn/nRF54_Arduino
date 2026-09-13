@@ -83,13 +83,7 @@ extern "C" {
 
 /* ---- IRQ name remapping ---- */
 
-/* GPIOTE */
-#ifndef GPIOTE_IRQn
-#define GPIOTE_IRQn         GPIOTE20_0_IRQn
-#endif
-#ifndef GPIOTE_IRQHandler
-#define GPIOTE_IRQHandler   GPIOTE20_0_IRQHandler
-#endif
+/* GPIOTE_IRQn / GPIOTE_IRQHandler follow GPIOTE_IRQ_GROUP, see WInterrupts.c */
 
 /* UART */
 #ifndef UARTE0_UART0_IRQn

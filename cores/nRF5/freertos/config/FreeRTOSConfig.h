@@ -172,7 +172,7 @@ See http://www.FreeRTOS.org/RTOS-Cortex-M3-M4.html. */
 /* Definitions that map the FreeRTOS port interrupt handlers to their CMSIS
 standard names - or at least those used in the unmodified vector table. */
 
-#define vPortSVCHandler                                          SVC_Handler
+/* SVC_Handler lives in nordic/sd_isr.S and hands SVC 0 to vPortSVCHandler */
 #define xPortPendSVHandler                                       PendSV_Handler
 
 /*-----------------------------------------------------------
@@ -182,14 +182,8 @@ standard names - or at least those used in the unmodified vector table. */
 /* GRTC SYSCOUNTER runs at 1 MHz */
 #define configSYSTICK_CLOCK_HZ  ( 1000000UL )
 
-/* GRTC IRQ handler — mapped based on security domain in portmacro_cmsis.h */
-#if defined(GRTC_IRQ_GROUP) && (GRTC_IRQ_GROUP == 1)
-#define xPortSysTickHandler     GRTC_1_IRQHandler
-#elif defined(GRTC_IRQ_GROUP) && (GRTC_IRQ_GROUP == 0)
+/* The tick uses GRTC IRQ group 0 (INTENSET0 in port_cmsis_systick.c); the SoftDevice owns group 3. */
 #define xPortSysTickHandler     GRTC_0_IRQHandler
-#else
-#define xPortSysTickHandler     GRTC_2_IRQHandler
-#endif
 
 /* CM33 TrustZone / MPU not used */
 #define configENABLE_TRUSTZONE  0
