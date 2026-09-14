@@ -46,7 +46,10 @@ package, and toolchains automatically on first build.
 - **nRF54L MDK headers** for L05/L10/L15 application + flpr targets
   (`cores/nRF5/nordic/nrfx/mdk/`)
 - **FreeRTOS port** running off the GRTC peripheral (nRF54L has no
-  SysTick); see `cores/nRF5/freertos/portable/GCC/nrf54l/`
+  SysTick); see `cores/nRF5/freertos/portable/{GCC,CMSIS}/nrf54l/`
+- **SoftDevice interrupt forwarding** (`cores/nRF5/nordic/sd_isr.S`):
+  s145 has no MBR, the application owns the vector table and hands the
+  SoftDevice its interrupts and SVCs
 - **Linker scripts** for all three chips that reserve 28 KB at the top
   of the application FLASH region for InternalFS
   (`cores/nRF5/linker/`)
@@ -60,26 +63,31 @@ package, and toolchains automatically on first build.
   nRF54L (different reference voltage, multiplier gains, microsecond
   TACQ, byte-count MAXCNT, structured PSELP)
 - **InternalFileSystem (LittleFS)** wired against
-  `__flash_arduino_start` / `__bootloader_addr` linker symbols, so no
+  `__flash_arduino_start` / `__flash_arduino_end` linker symbols, so no
   per-chip ifdefs in C++ code
 - **Bluefruit54Lib** with HID detached from TinyUSB, plus
   BANDWIDTH-aware data-length-update reply
 - **Library wrappers** for SPI, Wire (with per-variant TWIM instance
   override), Servo, SoftwareSerial, RotaryEncoder, PDM, nRF54Crypto
-  (CRACEN-backed replacement for nRF52840's CryptoCell)
+  (CRACEN RNG plus tinycrypt ECDH, replacing nRF52840's CryptoCell)
 
 ## Memory map
 
-| Chip | App FLASH | InternalFS (LittleFS) | Bootloader |
-|---|---|---|---|
-| nRF54L05 | `0x01000 – 0x47000` (~280 KB) | `0x47000 – 0x4E000` (28 KB) | `0x50000` |
-| nRF54L10 | `0x01000 – 0xC7000` (~792 KB) | `0xC7000 – 0xCE000` (28 KB) | `0xD0000` |
-| nRF54L15 | `0x01000 – 0x147000` (~1.27 MB) | `0x147000 – 0x14E000` (28 KB) | `0x150000` |
+s145 ships without an MBR. The DFU bootloader owns RRAM `0x0` and the reset
+vector, the application starts at `0x8000`, and the SoftDevice sits at the top
+of RRAM.
 
-Bootloader addresses confirmed against
-[caveman99/nRF54_Bootloader](https://github.com/caveman99/nRF54_Bootloader)
-linker scripts. The 8 KB gap between InternalFS end and bootloader start
-is consistent across all three chips.
+| Chip | Bootloader | App FLASH | InternalFS (LittleFS) | DFU settings | SoftDevice |
+|---|---|---|---|---|---|
+| nRF54L05 | `0x0 – 0x8000` | `0x8000 – 0x47000` | `0x47000 – 0x4E000` | `0x4F000` | `0x58C00` |
+| nRF54L10 | `0x0 – 0x8000` | `0x8000 – 0xC7000` | `0xC7000 – 0xCE000` | `0xCF000` | `0xD8C00` |
+| nRF54L15 | `0x0 – 0x8000` | `0x8000 – 0x147000` | `0x147000 – 0x14E000` | `0x14F000` | `0x158C00` |
+
+RAM: `0x20000000 – 0x20004800` belongs to the SoftDevice, the application
+runs from `0x20004800` to `0x2003FF80`; the last 128 bytes hold the
+bootloader's BLE peer data and double-reset marker. The layout matches the
+[nRF54_Bootloader](https://github.com/caveman99/nRF54_Bootloader) linker
+scripts.
 
 ## Limitations
 
@@ -94,8 +102,10 @@ is consistent across all three chips.
   via a per-variant override so it doesn't compete with SPI/UARTE on
   the SERIAL00/SERIAL20 fabric. See
   [variants/xiao_nrf54l15/variant.h](variants/xiao_nrf54l15/variant.h).
-- **Bluefruit BLE features that depend on CC310 (LESC) are not yet
-  reimplemented against CRACEN.** Legacy SMP pairing works.
+- **PIN pairing uses LE Secure Connections.** s145 rates legacy passkey
+  pairing as unauthenticated (security level 2); characteristics with MITM
+  permissions need an LESC bond. The key agreement runs on CRACEN/tinycrypt
+  via `nRF54Crypto`.
 
 ## Credits
 

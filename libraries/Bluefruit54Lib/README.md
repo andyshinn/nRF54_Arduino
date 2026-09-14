@@ -14,7 +14,8 @@ of places — see `src/BLESecurity.cpp` for the LESC DHKey reply
 sec_status arg, the trimmed `sd_ble_gap_sec_info_reply` signature, and
 the absence of `p_sign_key` in the keyset struct. CRACEN (via the
 sibling [nRF54Crypto](../nRF54Crypto/) library) replaces CryptoCell
-CC310 for software ECC and key generation.
+CC310 for the LESC key agreement. `BLESecurity::setPIN` uses LESC; s145
+rates legacy passkey pairing as unauthenticated (security level 2).
 
 Bandwidth handling is also tightened: `BLEConnection` caps the
 data-length update reply at the MTU implied by the configured

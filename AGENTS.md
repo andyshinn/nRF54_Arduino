@@ -107,35 +107,42 @@ enum (`Gain2_8` = 2/8, not `Gain1_6` = 1/6), microsecond TACQ count
 (`CONNECT | PORT | PIN`, not `AnalogInput0..7`). Don't try to merge
 the two — they're genuinely different peripherals.
 
+### No MBR: the application forwards SoftDevice interrupts
+
+s145 ships without an MBR. The DFU bootloader owns RRAM `0x0`, the
+application starts at `0x8000` with its own vector table and forwards the
+SoftDevice-owned interrupts and SVCs (`cores/nRF5/nordic/sd_isr.S`) to the
+handler table the SoftDevice publishes at its base (`__softdevice_start__`).
+The SoftDevice reset handler runs once from `wiring.c` before any `sd_*`
+call. Nothing in the vector table may shadow the forwarded entries.
+
 ### Linker symbols pin the memory map
 
-`cores/nRF5/linker/nrf54_common.ld` defines `__flash_arduino_start`
-and `__bootloader_addr` so InternalFS / `flash_nrf5x.c` work
-chip-independently. Per-chip values:
+`cores/nRF5/linker/nrf54_common.ld` defines `__flash_arduino_start` and
+`__flash_arduino_end` so InternalFS / `flash_nrf5x.c` work
+chip-independently. Per-chip values (from `nrf54l<chip>_s145_v9.ld`):
 
-| Chip | App FLASH end | Bootloader |
-|---|---|---|
-| nRF54L05 | `0x47000` | `0x50000` |
-| nRF54L10 | `0xC7000` | `0xD0000` |
-| nRF54L15 | `0x147000` | `0x150000` |
+| Chip | App FLASH | InternalFS | DFU settings page | SoftDevice |
+|---|---|---|---|---|
+| nRF54L05 | `0x8000 – 0x47000` | `0x47000 – 0x4E000` | `0x4F000` | `0x58C00` |
+| nRF54L10 | `0x8000 – 0xC7000` | `0xC7000 – 0xCE000` | `0xCF000` | `0xD8C00` |
+| nRF54L15 | `0x8000 – 0x147000` | `0x147000 – 0x14E000` | `0x14F000` | `0x158C00` |
 
-28 KB carved off the top of FLASH for LittleFS, 8 KB gap to bootloader.
-Confirmed against the bootloader repo's `linker/` scripts.
-
-The system area (SoftDevice + bootloader) sits at the **top** of RRAM
-on nRF54L — the application starts at `0x1000` (right after the MBR)
-and grows up toward the bootloader. This is the inverse of nRF52
-(SoftDevice at low addresses, app grows up toward bootloader at top).
-Reasoning by analogy with nRF52 layout will get linker addresses wrong.
+RAM ends at `0x2003FF80`; the bootloader keeps its BLE peer data and the
+double-reset marker in the last 128 bytes. Both sides must agree, so change
+the layout in the bootloader repo's `linker/` scripts in the same step.
 
 ### XIAO Wire routes to TWIM22
 
-The default `Wire` instance (`NRF_TWIM0` → `NRF_TWIM20` via compat) sits
-on the SERIAL20 fabric, which on XIAO is also where SPIM lands. The
-XIAO variants override `WIRE_TWIM` / `WIRE_TWIS` / `WIRE_IRQN` /
-`WIRE_IRQ_HANDLER` in their `variant.h` to point at TWIM22 (a
-dedicated TWI controller). Don't remove the override without
-verifying the routing on actual hardware.
+The default `Wire` instance (`NRF_TWIM0` → `NRF_TWIM20` via compat) shares
+the SERIAL20 instance with the XIAO console UARTE20. The XIAO variants
+override `WIRE_TWIM` / `WIRE_TWIS` / `WIRE_IRQN` / `WIRE_IRQ_HANDLER` in
+their `variant.h` to point at TWIM22 on D4/D5. Don't remove the override
+without verifying the routing on actual hardware.
+
+nRF54L serial peripherals ignore `PSEL` writes while enabled: configure
+pins first, then enable. A TWIM NACK leaves the bus held until a STOP
+task.
 
 ### `Serial` aliases to `Serial1`
 
@@ -153,9 +160,10 @@ cores/nRF5/                  - core sources (Arduino API + FreeRTOS port + nrfx 
   WInterrupts.c              - attachInterrupt; uses HAL nrf_gpiote_int_*
   wiring_analog_nRF54L.c     - SAADC
   freertos/                  - FreeRTOS kernel (capital-S Source/) + GRTC port
-  linker/                    - .ld scripts (chip + common)
+  linker/                    - .ld scripts (chip + common), app at 0x8000
   nordic/
     nrf54l_compat.h          - force-included; aliases nRF52 names → nRF54L
+    sd_isr.S/.c              - SoftDevice interrupt + SVC forwarding (no MBR)
     nrfx/                    - upstream Nordic nrfx (mostly dead via guards)
       drivers/src/*.c        - all wrapped in #if NRFX_<X>_ENABLED
     nrfx_config.h            - one place to flip drivers on/off
@@ -166,7 +174,7 @@ libraries/                   - PIO LDF-discovered bundled libs
   Adafruit_LittleFS          - filesystem
   InternalFileSytem          - LittleFS-on-sd_flash for bonding
   Wire/SPI/Servo/PDM/SoftwareSerial/RotaryEncoder
-variants/                    - per-board pin tables + linker scripts
+variants/                    - per-board pin tables
   xiao_nrf54l15(_sense)
   nrf54l05dk / nrf54l10dk / nrf54l15dk
 bootloader/s145/9.0.0/       - SoftDevice hex (bootloader hex lives in nRF54_Bootloader)
