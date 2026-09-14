@@ -1,6 +1,15 @@
 # Changelog
 
-## 0.2.0 — 2026-09-13
+## 0.2.1 â€” 2026-09-14
+
+- BLE pairing with a PIN keeps LE Secure Connections: s145 rates legacy passkey
+  pairing as unauthenticated (security level 2), which locked out every
+  characteristic that requires MITM protection
+- CRACEN RNG restarted on demand for the LESC key agreement and accepted in its
+  standby state; a halted generator is soft-reset
+- Heap size reported up to the stack limit, matching `_sbrk`
+
+## 0.2.0 â€” 2026-09-13
 
 Boots and runs on real nRF54L15 hardware (XIAO nRF54L15, nRF54L15-DK) with the
 [caveman99/nRF54_Bootloader](https://github.com/caveman99/nRF54_Bootloader) 0.2.0
@@ -26,7 +35,7 @@ layout: bootloader at 0x0, application at 0x8000, s145 at the top of RRAM.
   SoftwareSerial register access, default `File()` constructor,
   `NRF_REGULATORS->SYSTEMOFF` instead of the missing `sd_power_system_off`
 
-## 0.1.0 — 2026-05-12
+## 0.1.0 â€” 2026-05-12
 
 Initial fork from
 [Adafruit_nRF52_Arduino](https://github.com/adafruit/Adafruit_nRF52_Arduino),
@@ -41,7 +50,7 @@ Highlights:
 - FreeRTOS port running off the GRTC peripheral (nRF54L has no SysTick)
 - `nrf54l_compat.h` aliasing nRF52 peripheral names to nRF54L
   equivalents so most Adafruit core code compiles unmodified
-- `wiring_analog_nRF54L.c` — fresh SAADC implementation accounting for
+- `wiring_analog_nRF54L.c` â€” fresh SAADC implementation accounting for
   nRF54L's 0.9 V internal reference, multiplier gain enum, microsecond
   TACQ and byte-count MAXCNT
 - InternalFileSystem and `flash_nrf5x.c` consume `__flash_arduino_start`
@@ -53,7 +62,7 @@ Highlights:
 - XIAO variants route `Wire` to TWIM22 (dedicated TWI controller),
   avoiding the SERIAL00/SERIAL20 fabric shared with SPI/UARTE
 - nRF52-only submodules (`Adafruit_TinyUSB_Arduino`,
-  `Adafruit_nRFCrypto`) removed — nRF54L has no USB and uses CRACEN
+  `Adafruit_nRFCrypto`) removed â€” nRF54L has no USB and uses CRACEN
   instead of CC310
 - Bootloader hex sourced from the separate
   [nRF54_Bootloader](https://github.com/caveman99/nRF54_Bootloader)
