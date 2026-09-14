@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.3.0 — 2026-09-14
+
+- Documentation describes the s145 layout (application at `0x8000`, SoftDevice
+  interrupt forwarding, `__flash_arduino_start`/`__flash_arduino_end`) and
+  LESC PIN pairing
+- `wiring_analog_nRF52.c`, the nRF52 address gates in InternalFileSystem and
+  eleven unreferenced `nrf54l_compat.h` aliases removed
+
 ## 0.2.1 — 2026-09-14
 
 - BLE pairing with a PIN keeps LE Secure Connections: s145 rates legacy passkey
