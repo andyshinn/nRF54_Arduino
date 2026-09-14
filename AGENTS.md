@@ -7,7 +7,7 @@ Arduino BSP for **Nordic nRF54L05 / nRF54L10 / nRF54L15** with the
 reworked for nRF54L peripherals.
 
 **PlatformIO only.** Consumed exclusively through
-[caveman99/platform-nordicnrf54](https://github.com/caveman99/platform-nordicnrf54).
+[meshtastic/platform-nordicnrf54](https://github.com/meshtastic/platform-nordicnrf54).
 There is no `platform.txt`, `boards.txt`, or Arduino IDE / Board
 Manager support. Do not propose adding them.
 
@@ -15,8 +15,8 @@ Manager support. Do not propose adding them.
 
 | Repo | Role |
 |---|---|
-| [`caveman99/platform-nordicnrf54`](https://github.com/caveman99/platform-nordicnrf54) | PlatformIO platform: build flags, board JSONs, upload tooling, examples |
-| [`caveman99/nRF54_Bootloader`](https://github.com/caveman99/nRF54_Bootloader) | DFU bootloader source + per-board hex. PIO package `framework-arduinoadafruitnrf54-bootloader` |
+| [`meshtastic/platform-nordicnrf54`](https://github.com/meshtastic/platform-nordicnrf54) | PlatformIO platform: build flags, board JSONs, upload tooling, examples |
+| [`meshtastic/nRF54_Bootloader`](https://github.com/meshtastic/nRF54_Bootloader) | DFU bootloader source + per-board hex. PIO package `framework-arduinoadafruitnrf54-bootloader` |
 
 ## Project conventions
 
@@ -61,7 +61,7 @@ platform-side. If it affects what gets compiled, it's framework-side.
 ### `nrf54l_compat.h` is force-included by the platform
 
 The platform's
-[`builder/frameworks/arduino/adafruit.py`](https://github.com/caveman99/platform-nordicnrf54/blob/master/builder/frameworks/arduino/adafruit.py)
+[`builder/frameworks/arduino/adafruit.py`](https://github.com/meshtastic/platform-nordicnrf54/blob/master/builder/frameworks/arduino/adafruit.py)
 adds `-include cores/nRF5/nordic/nrf54l_compat.h` to CCFLAGS. This
 aliases nRF52 peripheral names (`NRF_PWM0..2`, `NRF_TWIM0/1`,
 `NRF_SPIM0/2`, `NRF_UARTE0/1`, `NRF_GPIOTE`, `NRF_TIMER2`, etc.) to

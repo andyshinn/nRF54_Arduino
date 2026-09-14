@@ -49,7 +49,7 @@ body:
   - type: input
     attributes:
       label: Platform version
-      description: Tag/commit of caveman99/platform-nordicnrf54 being used
+      description: Tag/commit of meshtastic/platform-nordicnrf54 being used
     validations:
       required: false
 

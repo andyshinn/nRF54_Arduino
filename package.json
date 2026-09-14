@@ -22,10 +22,10 @@
     "embedded"
   ],
   "system": "*",
-  "url": "https://github.com/caveman99/nRF54_Arduino",
+  "url": "https://github.com/meshtastic/nRF54_Arduino",
   "repository": {
     "type": "git",
-    "url": "https://github.com/caveman99/nRF54_Arduino.git"
+    "url": "https://github.com/meshtastic/nRF54_Arduino.git"
   },
   "license": "LGPL-2.1-or-later",
   "version": "0.3.0"

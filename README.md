@@ -7,7 +7,7 @@ and reworked for nRF54L peripherals.
 
 **PlatformIO only.** This framework is consumed exclusively through the
 companion PlatformIO platform
-[caveman99/platform-nordicnrf54](https://github.com/caveman99/platform-nordicnrf54).
+[meshtastic/platform-nordicnrf54](https://github.com/meshtastic/platform-nordicnrf54).
 There is no `platform.txt`, `boards.txt`, or Arduino IDE / Board Manager
 support, and there are no plans to add any. Use PlatformIO.
 
@@ -22,20 +22,20 @@ support, and there are no plans to add any. Use PlatformIO.
 | `nrf54l05dk` | nRF54L05 | Nordic nRF54L15-DK with L05 silicon |
 
 Board JSONs and upload tooling live in the
-[PlatformIO platform repo](https://github.com/caveman99/platform-nordicnrf54).
+[PlatformIO platform repo](https://github.com/meshtastic/platform-nordicnrf54).
 
 ## Installation
 
 ```ini
 ; platformio.ini
 [env:xiao_nrf54l15]
-platform = https://github.com/caveman99/platform-nordicnrf54.git
+platform = https://github.com/meshtastic/platform-nordicnrf54.git
 framework = arduino
 board = xiao_nrf54l15
 ```
 
 The platform pulls this framework, the
-[nRF54_Bootloader](https://github.com/caveman99/nRF54_Bootloader) hex
+[nRF54_Bootloader](https://github.com/meshtastic/nRF54_Bootloader) hex
 package, and toolchains automatically on first build.
 
 ## What's in here
@@ -86,7 +86,7 @@ of RRAM.
 RAM: `0x20000000 – 0x20004800` belongs to the SoftDevice, the application
 runs from `0x20004800` to `0x2003FF80`; the last 128 bytes hold the
 bootloader's BLE peer data and double-reset marker. The layout matches the
-[nRF54_Bootloader](https://github.com/caveman99/nRF54_Bootloader) linker
+[nRF54_Bootloader](https://github.com/meshtastic/nRF54_Bootloader) linker
 scripts.
 
 ## Limitations
