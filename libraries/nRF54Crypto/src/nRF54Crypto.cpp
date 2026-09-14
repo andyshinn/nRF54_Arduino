@@ -58,17 +58,22 @@ static bool cracen_rng_start(void)
     cfg.number_128_blocks = 1;
     nrf_cracen_rng_control_set(NRF_CRACENCORE, &cfg);
 
-    // Wait for RNG FSM to reach a ready state (not RESET or STARTUP)
+    // Wait for the FSM to leave RESET/STARTUP; a full FIFO parks it in IDLE_STANDBY (rings off)
     uint32_t timeout = RNG_TIMEOUT;
     while (timeout--) {
         nrf_cracen_rng_fsm_state_t state = nrf_cracen_rng_fsm_state_get(NRF_CRACENCORE);
         if (state == NRF_CRACEN_RNG_FSM_STATE_IDLE_READY ||
+            state == NRF_CRACEN_RNG_FSM_STATE_IDLE_STANDBY ||
             state == NRF_CRACEN_RNG_FSM_STATE_FILL_FIFO) {
             _rng_started = true;
             return true;
         }
         if (state == NRF_CRACEN_RNG_FSM_STATE_ERROR) {
-            return false;
+            // A halted generator needs a soft reset before it restarts
+            cfg.soft_reset = true;
+            nrf_cracen_rng_control_set(NRF_CRACENCORE, &cfg);
+            cfg.soft_reset = false;
+            nrf_cracen_rng_control_set(NRF_CRACENCORE, &cfg);
         }
     }
     return false;

@@ -197,17 +197,14 @@ bool BLESecurity::resolveAddress(ble_gap_addr_t const * p_addr, ble_gap_irk_t co
   return 0 == memcmp(hash, ecb_data.ciphertext, 3);
 }
 
-// Use Legacy SC static Passkey
+// Static passkey with peripheral display. s145 reports legacy pairing as unauthenticated (security
+// level 2), only LE Secure Connections reach level 3/4, and it takes the passkey for one attempt.
 bool BLESecurity::setPIN(const char* pin)
 {
   VERIFY(pin && strlen(pin) == BLE_GAP_PASSKEY_LEN);
 
-  // Static Passkey requires using
-  // - Legacy SC
-  // - IO cap: Display
-  // - MITM is on
   _sec_param.mitm = 1;
-  _sec_param.lesc = 0;
+  _sec_param.lesc = LESC_SUPPORTED;
   _sec_param.io_caps = BLE_GAP_IO_CAPS_DISPLAY_ONLY;
 
   ble_opt_t opt;
@@ -376,7 +373,8 @@ void BLESecurity::_eventHandler(ble_evt_t* evt)
       peerPublickKey.end();
       #else
       // CRACEN path: use TinyCrypt uECC for ECDH
-      nRF54Crypto.sharedSecret(_peer_pubkey+1, _private_key, dhkey.key);
+      bool ecdh_ok = nRF54Crypto.sharedSecret(_peer_pubkey+1, _private_key, dhkey.key);
+      LOG_LV2("PAIR", "ECDH shared secret %s", ecdh_ok ? "ok" : "FAILED");
       #endif
 
       // Swap Endian before sending to air
@@ -389,7 +387,9 @@ void BLESecurity::_eventHandler(ble_evt_t* evt)
       // S145 v9 added a sec_status parameter before the dhkey pointer.
       // BLE_GAP_SEC_STATUS_SUCCESS accepts the derivation; non-success
       // codes (BLE_GAP_SEC_STATUS_INVALID_PARAMS etc.) reject pairing.
-      sd_ble_gap_lesc_dhkey_reply(conn_hdl, BLE_GAP_SEC_STATUS_SUCCESS, &dhkey);
+      uint32_t dh_err = sd_ble_gap_lesc_dhkey_reply(conn_hdl, BLE_GAP_SEC_STATUS_SUCCESS, &dhkey);
+      LOG_LV2("PAIR", "DHKey reply err %lu", dh_err);
+      (void) dh_err;
     }
     break;
 #endif
