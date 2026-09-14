@@ -25,17 +25,9 @@
 #include "InternalFileSystem.h"
 #include "flash/flash_nrf5x.h"
 
-#if defined(NRF52840_XXAA)
-  #define LFS_FLASH_ADDR        0xED000
-#elif defined(NRF52832_XXAA) || defined(NRF52833_XXAA)
-  #define LFS_FLASH_ADDR        0x6D000
-#else
-  // nRF54L: address is chip-dependent and supplied by the linker script
-  // (see nrf54_common.ld). Per-chip values: l05 0x47000, l10 0xC7000,
-  // l15 0x147000.
-  extern "C" uint32_t __flash_arduino_start[];
-  #define LFS_FLASH_ADDR        ((uint32_t) __flash_arduino_start)
-#endif
+// Chip-dependent, supplied by the linker script (nrf54_common.ld)
+extern "C" uint32_t __flash_arduino_start[];
+#define LFS_FLASH_ADDR        ((uint32_t) __flash_arduino_start)
 
 #define LFS_FLASH_TOTAL_SIZE  (7*FLASH_NRF52_PAGE_SIZE)
 #define LFS_BLOCK_SIZE        256
