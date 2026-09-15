@@ -50,4 +50,7 @@ MEMORY
   NOINIT (rwx) :  ORIGIN = 0x200047FC, LENGTH = 0x04
 }
 
+/* Base of the SoftDevice image; see __softdevice_start__ in nrf54_common.ld. */
+__softdevice_start__ = 0x001DA800;
+
 INCLUDE "nrf54_common.ld"

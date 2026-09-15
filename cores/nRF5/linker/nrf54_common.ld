@@ -15,6 +15,16 @@ ENTRY(Reset_Handler)
 PROVIDE(__flash_arduino_start = ORIGIN(FLASH) + LENGTH(FLASH));
 PROVIDE(__flash_arduino_end   = __flash_arduino_start + 0x7000);
 
+/* __softdevice_start__: base of the SoftDevice image in RRAM. It cannot be
+ * derived from FLASH -- the SoftDevice sits near the top of RRAM at a
+ * chip-specific address that depends on the s145 version -- so each chip
+ * script sets it explicitly. nRF52 code that reads the SD info struct at
+ * MBR_SIZE is wrong here: on nRF54L that address is application code.
+ *   nRF54L05: 0x058C00   nRF54L10: 0x0D8C00
+ *   nRF54L15: 0x158C00   nRF54LM20A: 0x1DA800
+ * Consumed by sd_isr.c (interrupt forwarding) and utilities.c
+ * (SD_ID_GET / SD_VERSION_GET). */
+
 SECTIONS
 {
     .text :
