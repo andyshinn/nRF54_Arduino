@@ -63,7 +63,10 @@ static bool cracen_rng_start(void)
     while (timeout--) {
         nrf_cracen_rng_fsm_state_t state = nrf_cracen_rng_fsm_state_get(NRF_CRACENCORE);
         if (state == NRF_CRACEN_RNG_FSM_STATE_IDLE_READY ||
+#if NRF_CRACEN_RNG_HAS_IDLE_TIMER
+            // nRF54LM20A's CRACEN has no idle timer and so no rings-off state
             state == NRF_CRACEN_RNG_FSM_STATE_IDLE_STANDBY ||
+#endif
             state == NRF_CRACEN_RNG_FSM_STATE_FILL_FIFO) {
             _rng_started = true;
             return true;
