@@ -24,6 +24,16 @@
     .extern __libc_init_array
     .extern __StackTop
 
+    /* MSP stack (exceptions, SoftDevice); FreeRTOS task stacks come from the heap.
+     * nrf54_common.ld sizes __StackLimit from this section and new.cpp's _sbrk()
+     * stops the heap there, so without it the heap runs into the stack. */
+#ifndef __STACK_SIZE
+#define __STACK_SIZE 8192
+#endif
+    .section .stack
+    .align 3
+    .space __STACK_SIZE
+
 /* *****************************************************************************
  * Vector Table
  * *****************************************************************************/
