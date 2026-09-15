@@ -695,15 +695,15 @@ void adafruit_soc_task(void* arg)
 
             case NRF_EVT_RAND_SEED_REQUEST:
             {
-              // S145 requires the application to seed the RNG
+              // S145 requires the application to re-seed the RNG from a NIST SP 800-90B
+              // source (nrf_soc.h). FICR->INFO.DEVICEID is constant per device and would
+              // make every session key predictable, so use the CRACEN TRNG.
               uint8_t seed[SD_RAND_SEED_SIZE];
-              // Use FICR device ID and GRTC counter as entropy source
-              uint32_t* seed32 = (uint32_t*)seed;
-              for (uint32_t i = 0; i < SD_RAND_SEED_SIZE / 4; i++)
+              if ( nRF54Crypto.random(seed, sizeof(seed)) )
               {
-                seed32[i] = NRF_FICR->INFO.DEVICEID[i & 1] ^ (uint32_t)(NRF_GRTC->SYSCOUNTER[0].SYSCOUNTERL + i);
+                sd_rand_seed_set(seed);
               }
-              sd_rand_seed_set(seed);
+              memset(seed, 0, sizeof(seed));   // don't leave entropy on the stack
             }
             break;
 
