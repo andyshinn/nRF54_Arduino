@@ -82,10 +82,12 @@ of RRAM.
 | nRF54L05 | `0x0 – 0x8000` | `0x8000 – 0x47000` | `0x47000 – 0x4E000` | `0x4F000` | `0x58C00` |
 | nRF54L10 | `0x0 – 0x8000` | `0x8000 – 0xC7000` | `0xC7000 – 0xCE000` | `0xCF000` | `0xD8C00` |
 | nRF54L15 | `0x0 – 0x8000` | `0x8000 – 0x147000` | `0x147000 – 0x14E000` | `0x14F000` | `0x158C00` |
+| nRF54LM20A | `0x0 – 0x8000` | `0x8000 – 0x1C9000` | `0x1C9000 – 0x1D1000` | `0x1D1000` | `0x1DA800` |
 
 RAM: `0x20000000 – 0x20004800` belongs to the SoftDevice, the application
 runs from `0x20004800` to `0x2003FF80`; the last 128 bytes hold the
-bootloader's BLE peer data and double-reset marker. The layout matches the
+bootloader's BLE peer data and double-reset marker. The nRF54LM20A has a
+second RAM bank at `0x20040000` that neither image uses yet. The layout matches the
 [nRF54_Bootloader](https://github.com/meshtastic/nRF54_Bootloader) linker
 scripts.
 

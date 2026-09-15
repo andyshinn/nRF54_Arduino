@@ -120,13 +120,17 @@ call. Nothing in the vector table may shadow the forwarded entries.
 
 `cores/nRF5/linker/nrf54_common.ld` defines `__flash_arduino_start` and
 `__flash_arduino_end` so InternalFS / `flash_nrf5x.c` work
-chip-independently. Per-chip values (from `nrf54l<chip>_s145_v9.ld`):
+chip-independently, and `__bootloader_peer_data` (`ORIGIN(NOINIT)`) for
+`BLEDfu.cpp`. Each chip script sets `__flash_arduino_size` and
+`__softdevice_start__`. Per-chip values (from `nrf54l<chip>_s145_v9.ld` and
+`nrf54lm20a_s145_v10.ld`):
 
 | Chip | App FLASH | InternalFS | DFU settings page | SoftDevice |
 |---|---|---|---|---|
 | nRF54L05 | `0x8000 – 0x47000` | `0x47000 – 0x4E000` | `0x4F000` | `0x58C00` |
 | nRF54L10 | `0x8000 – 0xC7000` | `0xC7000 – 0xCE000` | `0xCF000` | `0xD8C00` |
 | nRF54L15 | `0x8000 – 0x147000` | `0x147000 – 0x14E000` | `0x14F000` | `0x158C00` |
+| nRF54LM20A | `0x8000 – 0x1C9000` | `0x1C9000 – 0x1D1000` | `0x1D1000` | `0x1DA800` |
 
 RAM ends at `0x2003FF80`; the bootloader keeps its BLE peer data and the
 double-reset marker in the last 128 bytes. Both sides must agree, so change

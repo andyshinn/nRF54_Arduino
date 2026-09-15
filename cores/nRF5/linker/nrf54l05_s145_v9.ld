@@ -13,6 +13,9 @@ MEMORY
   NOINIT (rwx) :  ORIGIN = 0x2003FF80, LENGTH = 0x78
 }
 
+/* InternalFS size; see __flash_arduino_size in nrf54_common.ld. */
+__flash_arduino_size = 0x7000;
+
 __softdevice_start__ = 0x00058C00;
 
 INCLUDE "nrf54_common.ld"

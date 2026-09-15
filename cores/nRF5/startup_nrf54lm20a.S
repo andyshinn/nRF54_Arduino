@@ -166,8 +166,9 @@ Reset_Handler:
      * kills FreeRTOS at the first context switch, because vPortStartFirstTask's
      * SVC and the following PendSV/SysTick dispatch into the wrong image.
      *
-     * Note this image's table is at the BOTTOM of RRAM (FLASH origin 0x1000)
-     * and the SoftDevice sits at the top, the inverse of the nRF52 layout.
+     * Note this image's table is near the BOTTOM of RRAM (FLASH origin 0x8000,
+     * just above the bootloader) and the SoftDevice sits at the top, the
+     * inverse of the nRF52 layout.
      * Do not "correct" this toward nRF52's SoftDevice-at-MBR_SIZE convention.
      *
      * SystemInit is not the place for it: the weak stub at the end of this
