@@ -89,8 +89,20 @@ g_pfnVectors:
     .word   Default_Handler
     /* IRQ 77: SERIAL00 (UARTE00/SPIM00/TWIM00) - Serial1 */
     .word   SERIAL00_IRQHandler
-    /* IRQ 78..197 */
-    .rept 120
+    /* IRQ 78..132 */
+    .rept 55
+    .word   Default_Handler
+    .endr
+    /* IRQ 133: TIMER10 - forwarded to the SoftDevice (nordic/sd_isr.S). */
+    .word   TIMER10_IRQHandler
+    /* IRQ 134..137 */
+    .rept 4
+    .word   Default_Handler
+    .endr
+    /* IRQ 138: RADIO_0 - forwarded to the SoftDevice. */
+    .word   RADIO_0_IRQHandler
+    /* IRQ 139..197 */
+    .rept 59
     .word   Default_Handler
     .endr
     /* IRQ 198: SERIAL20 - Serial2, and the legacy SPI0/TWI0 compat alias. */
@@ -117,8 +129,17 @@ g_pfnVectors:
     .word   GRTC_0_IRQHandler
     .word   GRTC_1_IRQHandler
     .word   GRTC_2_IRQHandler
-    /* IRQ 229..289 */
-    .rept 61
+    /* IRQ 229: GRTC_3 - the SoftDevice's GRTC group (SD_GRTC_IRQn_USED). The
+     * FreeRTOS tick is on GRTC_2, so the two do not overlap. */
+    .word   GRTC_3_IRQHandler
+    /* IRQ 230..269 */
+    .rept 40
+    .word   Default_Handler
+    .endr
+    /* IRQ 270: CLOCK_POWER - forwarded to the SoftDevice. */
+    .word   CLOCK_POWER_IRQHandler
+    /* IRQ 271..289 */
+    .rept 19
     .word   Default_Handler
     .endr
 
@@ -308,6 +329,36 @@ AAR00_CCM00_IRQHandler:
 ECB00_IRQHandler:
     bx lr
     .size ECB00_IRQHandler, .-ECB00_IRQHandler
+
+    /* The rest of the SoftDevice-owned lines. nordic/sd_isr.S defines the real
+     * forwarders; these weak defaults keep an undefined vector entry from
+     * pulling some other archive member that happens to define the name --
+     * nrfx_power.c defines CLOCK_POWER_IRQHandler, and loading it for that
+     * drags in nrfx_clock.c and an unresolved nrfx_clock_lfclk_irq_handler. */
+
+    .weak TIMER10_IRQHandler
+    .type TIMER10_IRQHandler, %function
+TIMER10_IRQHandler:
+    bx lr
+    .size TIMER10_IRQHandler, .-TIMER10_IRQHandler
+
+    .weak RADIO_0_IRQHandler
+    .type RADIO_0_IRQHandler, %function
+RADIO_0_IRQHandler:
+    bx lr
+    .size RADIO_0_IRQHandler, .-RADIO_0_IRQHandler
+
+    .weak GRTC_3_IRQHandler
+    .type GRTC_3_IRQHandler, %function
+GRTC_3_IRQHandler:
+    bx lr
+    .size GRTC_3_IRQHandler, .-GRTC_3_IRQHandler
+
+    .weak CLOCK_POWER_IRQHandler
+    .type CLOCK_POWER_IRQHandler, %function
+CLOCK_POWER_IRQHandler:
+    bx lr
+    .size CLOCK_POWER_IRQHandler, .-CLOCK_POWER_IRQHandler
 
     .weak TWIM20_IRQHandler
     .type TWIM20_IRQHandler, %function

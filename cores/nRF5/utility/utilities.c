@@ -47,6 +47,11 @@
 extern uint32_t __softdevice_start__[];
 #define SOFTDEVICE_ADDR ((uint32_t) __softdevice_start__)
 
+/* nordic/sd_isr.S splits the SVC vector at a hardcoded 0x10, because that file
+ * is assembly and cannot include nrf_sdm.h. Tie the two together here. */
+_Static_assert(SDM_SVC_BASE == 0x10,
+               "SoftDevice SVC base moved; update SD_SVC_BASE in nordic/sd_isr.S");
+
 
 /******************************************************************************/
 /*!
