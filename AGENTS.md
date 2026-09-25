@@ -102,8 +102,10 @@ against them — the linker eliminates unused code via `--gc-sections`.
 The nRF54L SAADC implementation lives in
 `cores/nRF5/wiring_analog_nRF54L.c`. nRF54L's SAADC differs from nRF52
 in five ways: 0.9 V internal reference (not 0.6 V), multiplier gain
-enum (`Gain2_8` = 2/8, not `Gain1_6` = 1/6), microsecond TACQ count
-(not enum), byte-count `MAXCNT` (not sample count), structured PSELP
+enum (`Gain2_8` = 2/8, not `Gain1_6` = 1/6), TACQ as a count of 125 ns
+steps (`(TACQ + 1) x 125 ns`, not a microsecond enum; `analogSampleTime()`
+still takes microseconds and converts), byte-count `MAXCNT` (not sample
+count), structured PSELP
 (`CONNECT | PORT | PIN`, not `AnalogInput0..7`). Don't try to merge
 the two — they're genuinely different peripherals.
 

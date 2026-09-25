@@ -144,6 +144,8 @@ static const uint8_t SCK  = PIN_SPI_SCK;
 /*
  * VBAT sense: P1.14 (AIN7) behind a 1:2 resistor divider that PIN_VBAT_EN
  * switches on (drive it HIGH and let the divider settle before reading).
+ * The divider is a high-impedance source, so give the SAADC the longest
+ * acquisition time with analogSampleTime(40) first.
  * The pin sees half the battery voltage, so scale the reading by 2, as
  * Seeed's XIAO nRF54L15 battery example does:
  *   mV = analogRead(PIN_VBAT_READ) * 3600 / 4096 * 2   (12-bit, AR_DEFAULT)

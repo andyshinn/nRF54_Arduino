@@ -61,8 +61,8 @@ package, and toolchains automatically on first build.
   `NRF_GPIOTE` → `NRF_GPIOTE20`, etc.) so most of the Adafruit core code
   compiles unmodified
 - **`wiring_analog_nRF54L.c`** — dedicated SAADC implementation for
-  nRF54L (different reference voltage, multiplier gains, microsecond
-  TACQ, byte-count MAXCNT, structured PSELP)
+  nRF54L (different reference voltage, multiplier gains, TACQ in
+  125 ns steps, byte-count MAXCNT, structured PSELP)
 - **InternalFileSystem (LittleFS)** wired against
   `__flash_arduino_start` / `__flash_arduino_end` linker symbols, so no
   per-chip ifdefs in C++ code
