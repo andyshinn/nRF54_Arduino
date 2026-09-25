@@ -73,9 +73,25 @@ static const uint8_t A7  = PIN_A7;
  * Serial interfaces
  */
 
-// Serial1 — default UART on D6 (TX) / D7 (RX)
+// Serial1 — UARTE00 on D6 (TX) / D7 (RX). SERIAL00 is also the SPIM00
+// behind the default SPI on D8..D10, so Serial1 and SPI cannot run together.
 #define PIN_SERIAL1_TX      (6)   // P2.08
 #define PIN_SERIAL1_RX      (7)   // P2.07
+
+// Serial2 is the UART wired to the onboard SAMD11 USB-serial bridge (the
+// Zephyr board's console, uart20), so it -- not Serial1 -- is what a host
+// sees when the board is plugged in. The core's default UARTE20 reaches P1,
+// and nothing else in this variant uses SERIAL20 (Wire is on TWIM22).
+#define PIN_SERIAL2_TX      PIN_SAMD11_RX  // P1.09, nRF TX -> bridge RX
+#define PIN_SERIAL2_RX      PIN_SAMD11_TX  // P1.08, bridge TX -> nRF RX
+
+/*
+ * Map the plain `Serial` symbol (and SERIAL_PORT_MONITOR) onto Serial2 rather
+ * than the core's default of Serial1. Serial1 is D6/D7, which is not connected
+ * to the USB bridge and shares SERIAL00 with SPI. Serial1 stays available by
+ * name for anyone who does want D6/D7.
+ */
+#define SERIAL_PORT_CONSOLE  Serial2
 
 /*
  * SPI Interfaces
