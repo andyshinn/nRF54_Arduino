@@ -33,8 +33,8 @@ __bootloader_peer_data = ORIGIN(NOINIT);
  * chip-specific address that depends on the s145 version -- so each chip
  * script sets it explicitly. nRF52 code that reads the SD info struct at
  * MBR_SIZE is wrong here: on nRF54L that address is application code.
- *   nRF54L05: 0x058C00   nRF54L10: 0x0D8C00
- *   nRF54L15: 0x158C00   nRF54LM20A: 0x1DA800
+ *   nRF54L05: 0x05A800   nRF54L10: 0x0DA800
+ *   nRF54L15: 0x15A800   nRF54LM20A: 0x1DA800
  * Consumed by sd_isr.c (interrupt forwarding) and utilities.c
  * (SD_ID_GET / SD_VERSION_GET). */
 

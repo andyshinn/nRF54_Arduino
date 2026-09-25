@@ -1,4 +1,4 @@
-/* nRF54L15 application with the s145 v9.0.0 SoftDevice.
+/* nRF54L15 application with the s145 v10.0.1 SoftDevice.
  * RRAM 0x0-0x8000 is the bootloader (it owns reset), the SoftDevice sits at the top of RRAM. */
 SEARCH_DIR(.)
 GROUP(-lgcc -lc -lnosys)
@@ -16,6 +16,6 @@ MEMORY
 /* InternalFS size; see __flash_arduino_size in nrf54_common.ld. */
 __flash_arduino_size = 0x7000;
 
-__softdevice_start__ = 0x00158C00;
+__softdevice_start__ = 0x0015A800;
 
 INCLUDE "nrf54_common.ld"
