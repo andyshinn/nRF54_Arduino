@@ -48,6 +48,7 @@ const uint32_t g_ADigitalPinMap[] =
   67,   // 21 = RF_SW = P2.03
   69,   // 22 = RF_SW_CTL = P2.05
   47,   // 23 = VBAT_EN = P1.15
+  46,   // 24 = VBAT_READ = P1.14 (AIN7)
 };
 
 

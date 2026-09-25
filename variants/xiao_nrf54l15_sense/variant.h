@@ -24,8 +24,8 @@ extern "C"
 #endif // __cplusplus
 
 // Number of pins defined in PinDescription array
-#define PINS_COUNT           (24)
-#define NUM_DIGITAL_PINS     (24)
+#define PINS_COUNT           (25)
+#define NUM_DIGITAL_PINS     (25)
 #define NUM_ANALOG_INPUTS    (8)
 #define NUM_ANALOG_OUTPUTS   (0)
 
@@ -134,7 +134,15 @@ static const uint8_t SCK  = PIN_SPI_SCK;
 #define PIN_RF_SW            (21)  // P2.03 — RF switch power enable
 #define PIN_RF_SW_CTL        (22)  // P2.05 — RF path select (0=ceramic, 1=ext)
 #define PIN_VBAT_EN          (23)  // P1.15 — VBAT divider enable
-#define PIN_VBAT_READ        PIN_A7  // P1.14 — VBAT divider sense
+
+/*
+ * VBAT sense: P1.14 (AIN7) behind a 1:2 resistor divider that PIN_VBAT_EN
+ * switches on (drive it HIGH and let the divider settle before reading).
+ * The pin sees half the battery voltage, so scale the reading by 2, as
+ * Seeed's XIAO nRF54L15 battery example does:
+ *   mV = analogRead(PIN_VBAT_READ) * 3600 / 4096 * 2   (12-bit, AR_DEFAULT)
+ */
+#define PIN_VBAT_READ        (24)  // P1.14 — VBAT divider sense (AIN7)
 
 #ifdef __cplusplus
 }
