@@ -42,6 +42,15 @@
 uint32_t sd_app_ram_start_required = 0;
 #include "utility/bonding.h"
 
+// Defined by the TinyUSB port on the nRF54LM20, which has to hand the HFXO over to the SoftDevice
+extern "C" __attribute__((weak)) void usb_softdevice_pre_enable(void)
+{
+}
+
+extern "C" __attribute__((weak)) void usb_softdevice_post_enable(void)
+{
+}
+
 #ifndef CFG_BLE_TX_POWER_LEVEL
 #define CFG_BLE_TX_POWER_LEVEL    0
 #endif
@@ -82,6 +91,14 @@ static void bluefruit_blinky_cb( TimerHandle_t xTimer )
 #ifdef LED_BLUE
   digitalToggle(LED_BLUE);
 #endif
+}
+
+// s145 has no entropy source of its own and asks the application for a seed (NRF_EVT_RAND_SEED_REQUEST).
+// The RNG is left running: LESC key generation draws from it on another task.
+static bool seed_softdevice_rng(void)
+{
+  uint8_t seed[SD_RAND_SEED_SIZE];
+  return nRF54Crypto.begin() && nRF54Crypto.random(seed, sizeof(seed)) && (sd_rand_seed_set(seed) == NRF_SUCCESS);
 }
 
 static void nrf_error_cb(uint32_t id, uint32_t pc, uint32_t info)
@@ -249,10 +266,12 @@ void AdafruitBluefruit::configCentralBandwidth(uint8_t bw)
   }
 }
 
-bool AdafruitBluefruit::begin(uint8_t prph_count, uint8_t central_count)
+// Enables the SoftDevice, once. Shared by begin() and the TinyUSB port on the nRF54LM20, which enables it
+// before setup() so that it already holds the HFXO when USB starts PCLK24M (see Adafruit_TinyUSB_nrf54.cpp)
+extern "C" bool bluefruit_softdevice_enable(void)
 {
-  _prph_count    = prph_count;
-  _central_count = central_count;
+  static bool enabled = false;
+  if ( enabled ) return true;
 
   // Configure Clock
 #if defined( USE_LFXO )
@@ -281,22 +300,30 @@ bool AdafruitBluefruit::begin(uint8_t prph_count, uint8_t central_count)
   #error Clock Source is not configured, define USE_LFXO or USE_LFRC according to your board in variant.h
 #endif
 
-  // Enable SoftDevice
+  // Enable SoftDevice. The USB port (TinyUSB, nRF54LM20) releases PCLK24M across it
+  usb_softdevice_pre_enable();
   extern uint32_t __softdevice_start__;
   sd_isr_forwarding_enable((uint32_t) &__softdevice_start__);
   uint32_t sd_err = sd_softdevice_enable(&clock_cfg, nrf_error_cb);
   if ( sd_err != NRF_SUCCESS ) sd_isr_forwarding_disable();
   VERIFY_STATUS( sd_err, false );
+  enabled = true;
 
-  // s145 asks for a seed (NRF_EVT_RAND_SEED_REQUEST) and sd_ble_enable() fails with INVALID_STATE without one
-  {
-    uint8_t seed[SD_RAND_SEED_SIZE];
-    nRF54Crypto.begin();
-    bool seeded = nRF54Crypto.random(seed, sizeof(seed));
-    nRF54Crypto.end();
-    VERIFY(seeded, false);
-    VERIFY_STATUS( sd_rand_seed_set(seed), false );
-  }
+  // The SoftDevice now owns the HFXO; the USB port (TinyUSB, nRF54LM20) has to request it here
+  usb_softdevice_post_enable();
+
+  return true;
+}
+
+bool AdafruitBluefruit::begin(uint8_t prph_count, uint8_t central_count)
+{
+  _prph_count    = prph_count;
+  _central_count = central_count;
+
+  VERIFY( bluefruit_softdevice_enable(), false );
+
+  // sd_ble_enable() fails with INVALID_STATE until the RNG is seeded
+  VERIFY( seed_softdevice_rng(), false );
 
   /*------------------------------------------------------------------*/
   /*  SoftDevice Default Configuration depending on the number of
@@ -665,6 +692,21 @@ extern "C" void SD_EVT_IRQHandler(void)
 #endif
 }
 
+// An unanswered seed request leaves the SoftDevice RNG unseeded, so the SOC task retries a failed seed
+// between event batches rather than inline, where it would hold up flash completions.
+static volatile bool _seed_pending = false;
+
+// The InternalFS flash driver drains the SoC event queue while it waits for a flash completion and
+// hands every other event to this hook, so a seed request it pulls out never reaches the SOC task
+// below: pass it on, waking the task through SD_EVT_IRQn. Weak: an application that reads the SoC
+// events itself can take them over.
+extern "C" __attribute__((weak)) void flash_nrf5x_soc_event_hook(uint32_t soc_evt)
+{
+  if ( soc_evt != NRF_EVT_RAND_SEED_REQUEST ) return;
+  _seed_pending = true;
+  NVIC_SetPendingIRQ(SD_EVT_IRQn);
+}
+
 /**
  * Handle SOC event such as FLASH operation
  */
@@ -674,7 +716,14 @@ void adafruit_soc_task(void* arg)
 
   while (1)
   {
-    if ( xSemaphoreTake(Bluefruit._soc_event_sem, portMAX_DELAY) )
+    // Cleared first, so a request the flash hook passes on meanwhile is not lost
+    if ( _seed_pending )
+    {
+      _seed_pending = false;
+      if ( !seed_softdevice_rng() ) _seed_pending = true;
+    }
+
+    if ( xSemaphoreTake(Bluefruit._soc_event_sem, _seed_pending ? pdMS_TO_TICKS(10) : portMAX_DELAY) )
     {
       uint32_t soc_evt;
       uint32_t err = ERROR_NONE;
@@ -694,17 +743,7 @@ void adafruit_soc_task(void* arg)
             break;
 
             case NRF_EVT_RAND_SEED_REQUEST:
-            {
-              // S145 requires the application to re-seed the RNG from a NIST SP 800-90B
-              // source (nrf_soc.h). FICR->INFO.DEVICEID is constant per device and would
-              // make every session key predictable, so use the CRACEN TRNG.
-              uint8_t seed[SD_RAND_SEED_SIZE];
-              if ( nRF54Crypto.random(seed, sizeof(seed)) )
-              {
-                sd_rand_seed_set(seed);
-              }
-              memset(seed, 0, sizeof(seed));   // don't leave entropy on the stack
-            }
+              _seed_pending = true;
             break;
 
             default: break;
